@@ -1,0 +1,2391 @@
+{
+  "level": 1,
+  "modules": [
+    {
+      "id": "ssiap1-box-1",
+      "level": 1,
+      "title": "Le Feu",
+      "subtitle": "Combustion, classes, propagation",
+      "icon": "🔥",
+      "color": "from-red-500 to-orange-600",
+      "display_order": 0,
+      "is_active": true,
+      "questions": [
+        {
+          "id": "ssiap1-b1-q1",
+          "module_id": "ssiap1-box-1",
+          "display_order": 0,
+          "type": "scenario",
+          "title": "Odeur suspecte",
+          "question": "Quelle est votre PREMIÈRE action ?",
+          "scenario": "Lors d'une ronde de nuit, vous sentez une forte odeur de brûlé dans le couloir du 2ème étage. Vous approchez d'une porte et constatez qu'elle est chaude au toucher. Aucune fumée visible.",
+          "situation": null,
+          "explanation": "Porte chaude = feu violent possible derrière. On ne l'ouvre JAMAIS. On déclenche l'alarme en priorité puis on alerte le PC.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Ouvrir la porte pour vérifier l'intérieur",
+            "Ne pas ouvrir — déclencher l'alarme et alerter le PC de sécurité",
+            "Chercher un extincteur avant tout",
+            "Appeler vos collègues pour confirmation"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q2",
+          "module_id": "ssiap1-box-1",
+          "display_order": 1,
+          "type": "quiz",
+          "title": "Tétraèdre du feu",
+          "question": "Quels sont les 4 éléments du tétraèdre du feu ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Tétraèdre = combustible + comburant (O2) + énergie d'activation + réaction en chaîne. Supprimer l'un des 4 éteint le feu.",
+          "correct_answer": 0,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Combustible, comburant, énergie d'activation, réaction en chaîne",
+            "Eau, air, terre, feu",
+            "Flamme, fumée, chaleur, gaz",
+            "Bois, oxygène, chaleur, vent"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q3",
+          "module_id": "ssiap1-box-1",
+          "display_order": 2,
+          "type": "multiple-select",
+          "title": "Facteurs de propagation",
+          "question": "Quels facteurs ACCÉLÈRENT la propagation d'un incendie ? (plusieurs réponses)",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Charge calorifique ✅, courants d'air ✅, géométrie ✅, air sec ✅. La couleur des murs n'a aucun impact sur la propagation ❌.",
+          "correct_answer": null,
+          "correct_answers": [
+            0,
+            2,
+            3,
+            4
+          ],
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "La charge calorifique élevée",
+            "La couleur des murs",
+            "Les courants d'air et la ventilation",
+            "La géométrie et la hauteur du local",
+            "L'humidité de l'air faible"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q4",
+          "module_id": "ssiap1-box-1",
+          "display_order": 3,
+          "type": "find-intruder",
+          "title": "Classe de feu inexistante",
+          "question": "Parmi ces classes de feu, laquelle N'EXISTE PAS dans la nomenclature européenne actuelle ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "La classe E n'existe plus depuis la révision européenne. Classes valides : A (solides), B (liquides), C (gaz), D (métaux), F (huiles cuisson).",
+          "correct_answer": 2,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Classe A — feux de solides",
+            "Classe B — feux de liquides",
+            "Classe E — feux d'installations électriques",
+            "Classe F — feux d'huiles de cuisson"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q5",
+          "module_id": "ssiap1-box-1",
+          "display_order": 4,
+          "type": "true-false",
+          "title": "Fumée et mortalité",
+          "question": "La fumée est la principale cause de décès lors d'un incendie, avant les brûlures directes.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "VRAI — 80% des victimes meurent d'intoxication aux fumées (CO, HCN, CO2...) avant d'être atteintes par les flammes. Les fumées désorientation et provoquent la perte de conscience.",
+          "correct_answer": 0,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q6",
+          "module_id": "ssiap1-box-1",
+          "display_order": 5,
+          "type": "matching",
+          "title": "Agents extincteurs",
+          "question": "Associez chaque agent extincteur à son mode d'action principal :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Eau = refroidit la base. CO2 = chasse l'oxygène. Poudre = interrompt la réaction en chaîne. Mousse = double action couvrant + refroidissant.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": [
+            {
+              "left": "Eau pulvérisée",
+              "right": "Refroidissement"
+            },
+            {
+              "left": "CO2",
+              "right": "Étouffement (chasse O2)"
+            },
+            {
+              "left": "Poudre ABC",
+              "right": "Inhibition chimique"
+            },
+            {
+              "left": "Mousse",
+              "right": "Étouffement + refroidissement"
+            }
+          ],
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q7",
+          "module_id": "ssiap1-box-1",
+          "display_order": 6,
+          "type": "sequence",
+          "title": "Phases d'un incendie",
+          "question": "Remettez dans l'ordre chronologique les phases de développement d'un incendie :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Naissance → Développement → Flashover (500°C au plafond) → Décrescence. Le flashover est le point de non-retour : tous les matériaux s'enflamment simultanément.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Feu naissant (< 1m²)",
+            "Phase de développement (flammes vives)",
+            "Embrasement généralisé — flashover",
+            "Phase de décrescence"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q8",
+          "module_id": "ssiap1-box-1",
+          "display_order": 7,
+          "type": "fill-blank",
+          "title": "Réaction et résistance",
+          "question": "Complétez ces deux notions fondamentales :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Réaction = comment le matériau se comporte face à une flamme (classement Euroclasses A à F). Résistance = durée en minutes/heures où la structure tient (REI 30, 60, 120...).",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": [
+            "réaction au feu",
+            "résistance au feu"
+          ],
+          "correct_path": null,
+          "word_bank": [
+            "réaction au feu",
+            "résistance au feu",
+            "conductivité",
+            "inflammabilité",
+            "opacité",
+            "résistance mécanique"
+          ],
+          "sentence": "La %1% d'un matériau évalue sa participation à la naissance et au développement du feu, tandis que la %2% évalue la durée pendant laquelle il conserve sa fonction.",
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q9",
+          "module_id": "ssiap1-box-1",
+          "display_order": 8,
+          "type": "ranking",
+          "title": "Résistance des matériaux",
+          "question": "Classez ces matériaux du PLUS résistant au MOINS résistant face au feu :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Béton > Brique > Bois (carbonise mais reste porteur un moment) > Acier nu (perd 50% de sa résistance dès 400-600°C).",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Béton armé avec protection",
+            "Brique réfractaire pleine",
+            "Bois lamellé collé (carbonisation lente)",
+            "Acier nu sans protection"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q10",
+          "module_id": "ssiap1-box-1",
+          "display_order": 9,
+          "type": "categories",
+          "title": "Extincteur adapté",
+          "question": "Classez ces agents extincteurs selon leur utilisation sur un feu d'origine électrique :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "CO2 ✅ et Poudre ✅ = non conducteurs. Eau jet plein ❌, eau pulvérisée conductrice ❌, mousse ❌ = risque d'électrocution grave.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": [
+            {
+              "id": "ok",
+              "label": "✅ Utilisable sur feu électrique"
+            },
+            {
+              "id": "nok",
+              "label": "❌ INTERDIT sur feu électrique"
+            }
+          ],
+          "category_items": [
+            {
+              "text": "CO2",
+              "category": "ok"
+            },
+            {
+              "text": "Poudre ABC (sèche)",
+              "category": "ok"
+            },
+            {
+              "text": "Eau jet plein",
+              "category": "nok"
+            },
+            {
+              "text": "Eau pulvérisée conductrice",
+              "category": "nok"
+            },
+            {
+              "text": "Mousse",
+              "category": "nok"
+            }
+          ],
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q11",
+          "module_id": "ssiap1-box-1",
+          "display_order": 10,
+          "type": "image-identify",
+          "title": "Panneau triangulaire jaune",
+          "question": "Ce panneau triangulaire jaune signale :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Triangle jaune ISO 7010 W012 = AVERTISSEMENT danger électrique. Présence de tension dangereuse. Ne jamais intervenir sans habilitation électrique.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "electrical-hazard",
+          "image_desc": "ISO 7010 — W012",
+          "options": [
+            "Un moyen de lutte incendie à proximité",
+            "Un danger électrique — zone à risque",
+            "Un défibrillateur accessible",
+            "Une coupure d'urgence électricité"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q12",
+          "module_id": "ssiap1-box-1",
+          "display_order": 11,
+          "type": "decision",
+          "title": "Découverte d'incendie",
+          "question": "Arbre de décision — étape par étape :",
+          "scenario": "Vous êtes en patrouille. Vous découvrez de la fumée qui sort sous la porte d'un local technique. La porte est tiède. Vous êtes seul.",
+          "situation": null,
+          "explanation": "Alarme en 1er → Intervention si feu petit et sortie disponible → Abandon si le feu prend de l'ampleur. La vie prime sur les biens.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": [
+            1,
+            1,
+            1
+          ],
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": [
+            {
+              "question": "ÉTAPE 1 — Que faites-vous en premier ?",
+              "options": [
+                {
+                  "text": "Ouvrir pour voir l'étendue du feu",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Déclencher l'alarme et appeler le PC sécurité",
+                  "nextStep": 1
+                },
+                {
+                  "text": "Prendre un extincteur avant tout",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 2 — La porte est tiède (pas chaude). Pouvez-vous intervenir ?",
+              "options": [
+                {
+                  "text": "Non, évacuer sans intervenir",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Oui si feu naissant, sortie dans le dos, extincteur adapté",
+                  "nextStep": 2
+                },
+                {
+                  "text": "Oui toujours, c'est mon rôle",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 3 — L'extincteur est vide après 15 secondes, le feu progresse. Que faites-vous ?",
+              "options": [
+                {
+                  "text": "Continuer avec les mains",
+                  "nextStep": null
+                },
+                {
+                  "text": "Abandonner l'intervention, évacuer, fermer la porte",
+                  "nextStep": null
+                },
+                {
+                  "text": "Attendre les pompiers sur place",
+                  "nextStep": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ssiap1-b1-q13",
+          "module_id": "ssiap1-box-1",
+          "display_order": 12,
+          "type": "true-false",
+          "title": "Backdraft vs Flashover",
+          "question": "Le backdraft et le flashover sont deux noms différents pour désigner le même phénomène.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "FAUX — Backdraft = explosion due à un apport soudain d'oxygène dans un local enfumé. Flashover = embrasement généralisé par montée en température (500°C au plafond). Deux phénomènes distincts et tous deux mortels.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b1-q14",
+          "module_id": "ssiap1-box-1",
+          "display_order": 13,
+          "type": "scenario",
+          "title": "Choix de l'extincteur",
+          "question": "Quel extincteur utilisez-vous et pourquoi ?",
+          "scenario": "Dans la salle serveur, un câble électrique prend feu. Vous disposez d'un extincteur à eau pulvérisée non additif et d'un extincteur CO2. Les flammes font 40 cm de haut.",
+          "situation": null,
+          "explanation": "CO2 = agent non conducteur, idéal pour les locaux électriques/informatiques. L'eau conduit l'électricité → risque d'électrocution. Exception : eau pulvérisée avec additif anti-électrostatique (vérifier le marquage \"feux électriques\").",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "L'eau pulvérisée — elle refroidit bien",
+            "Le CO2 — non conducteur, adapté aux feux électriques",
+            "Les deux ensemble pour plus d'efficacité",
+            "Ni l'un ni l'autre — évacuer sans intervenir"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        }
+      ]
+    },
+    {
+      "id": "ssiap1-box-2",
+      "level": 1,
+      "title": "ERP & IGH",
+      "subtitle": "Réglementation, classification, obligations",
+      "icon": "🏛️",
+      "color": "from-blue-600 to-indigo-700",
+      "display_order": 1,
+      "is_active": true,
+      "questions": [
+        {
+          "id": "ssiap1-b2-q1",
+          "module_id": "ssiap1-box-2",
+          "display_order": 0,
+          "type": "quiz",
+          "title": "Classification ERP",
+          "question": "Un ERP est classé selon deux critères principaux. Lesquels ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Type = lettre selon l'activité (M=magasin, R=enseignement, O=hôtel...). Catégorie = de 1 à 5 selon l'effectif. Ces deux critères déterminent toutes les obligations réglementaires.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "La hauteur des bâtiments et leur surface",
+            "L'activité exercée (type) et l'effectif maximal accueilli (catégorie)",
+            "La date de construction et le nombre d'étages",
+            "La commune et la distance aux secours"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q2",
+          "module_id": "ssiap1-box-2",
+          "display_order": 1,
+          "type": "scenario",
+          "title": "Travaux et SSI",
+          "question": "Quelle est la bonne conduite à tenir ?",
+          "scenario": "Des travaux de rénovation prévoient d'ouvrir une trémie de 0,5m² dans un plancher coupe-feu 1h30 pour faire passer des câbles. Le chef de chantier dit que c'est \"un petit percement sans importance\".",
+          "situation": null,
+          "explanation": "Toute modification impactant la sécurité incendie (structure CF, SSI) nécessite une autorisation préalable de la commission. Le permis de feu est obligatoire pour les travaux par points chauds.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Accepter les travaux — c'est effectivement mineur",
+            "Exiger un permis de feu et une demande d'autorisation à la commission de sécurité avant tout début",
+            "Autoriser à condition de reboucher immédiatement après",
+            "Appeler les pompiers pour avis verbal"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q3",
+          "module_id": "ssiap1-box-2",
+          "display_order": 2,
+          "type": "find-intruder",
+          "title": "Type ERP inexistant",
+          "question": "Parmi ces types d'ERP, lequel N'EXISTE PAS dans la réglementation française ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Le type Z n'existe pas. Les vrais types vont de J à Y : J(personnes âgées), L(salles), M(magasins), N(restaurants), O(hôtels), P(dancings), R(enseignement), S(bibliothèques), T(expo), U(soins), V(culte), W(bureaux), X(sports), Y(musées).",
+          "correct_answer": 2,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Type M — Magasins et centres commerciaux",
+            "Type O — Hôtels et pensions de famille",
+            "Type Z — Zones industrielles et entrepôts",
+            "Type U — Établissements de soins"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q4",
+          "module_id": "ssiap1-box-2",
+          "display_order": 3,
+          "type": "true-false",
+          "title": "IGH habitation",
+          "question": "Un immeuble d'habitation est classé IGH dès que le plancher bas du dernier niveau habité dépasse 28 mètres.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "FAUX — Seuil IGH habitation = 50 mètres. Le seuil de 28 m s'applique aux IGH à usage de bureaux, hôtels, établissements d'enseignement. Ces seuils conditionnent des exigences très renforcées.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q5",
+          "module_id": "ssiap1-box-2",
+          "display_order": 4,
+          "type": "matching",
+          "title": "Classes IGH",
+          "question": "Associez chaque sigle IGH à son usage :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "GHA=habitation (>50m), GHO=hôtels, GHW=bureaux, GHU=sanitaire, GHR=enseignement, GHS=archives, GHZ=mixte. Le code GH + lettre = type d'usage.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": [
+            {
+              "left": "GHA",
+              "right": "Habitation"
+            },
+            {
+              "left": "GHO",
+              "right": "Hôtels et résidences"
+            },
+            {
+              "left": "GHW",
+              "right": "Bureaux"
+            },
+            {
+              "left": "GHU",
+              "right": "Établissements sanitaires"
+            }
+          ],
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q6",
+          "module_id": "ssiap1-box-2",
+          "display_order": 5,
+          "type": "multiple-select",
+          "title": "Obligations IGH",
+          "question": "Quelles obligations sont SPÉCIFIQUES aux IGH ? (plusieurs réponses)",
+          "scenario": null,
+          "situation": null,
+          "explanation": "SSIAP 24h/24 ✅, compartimentage ✅, SSI cat.A ✅, colonnes humides ✅. L'exercice trimestriel n'est pas une obligation spécifique IGH — 2 fois/an en ERP courant.",
+          "correct_answer": null,
+          "correct_answers": [
+            0,
+            1,
+            2,
+            4
+          ],
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Service de sécurité SSIAP 24h/24 et 7j/7",
+            "Compartimentage maximum 2 500 m² sur 3 niveaux",
+            "SSI de catégorie A obligatoire",
+            "Exercice d'évacuation trimestriel",
+            "Colonnes en charge (humides) aux étages"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q7",
+          "module_id": "ssiap1-box-2",
+          "display_order": 6,
+          "type": "sequence",
+          "title": "Instruction dossier ERP",
+          "question": "Remettez dans l'ordre les étapes d'instruction d'une demande d'ouverture d'ERP :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Sans avis FAVORABLE de la commission, le maire ne peut pas délivrer l'autorisation. Un avis défavorable = fermeture administrative possible.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Dépôt du dossier (notice sécurité + plans)",
+            "Instruction technique par les services",
+            "Visite et avis de la commission de sécurité",
+            "Délivrance de l'autorisation d'ouverture par le maire"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q8",
+          "module_id": "ssiap1-box-2",
+          "display_order": 7,
+          "type": "fill-blank",
+          "title": "Compartimentage IGH",
+          "question": "Complétez la règle de compartimentage des IGH :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Article GH 10 : 2 500 m² max et 3 niveaux max par compartiment. Les parois délimitatives doivent être CF 2h minimum.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": [
+            "2500",
+            "3"
+          ],
+          "correct_path": null,
+          "word_bank": [
+            "2500",
+            "3",
+            "5000",
+            "2",
+            "1000",
+            "4",
+            "1500",
+            "6"
+          ],
+          "sentence": "Dans un IGH, chaque compartiment ne doit pas dépasser %1% m² de surface et %2% niveaux en superposition.",
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q9",
+          "module_id": "ssiap1-box-2",
+          "display_order": 8,
+          "type": "ranking",
+          "title": "Fréquence des visites de commission",
+          "question": "Classez ces catégories d'ERP par fréquence de visite (de la plus fréquente à la moins fréquente) :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "1ère et 2ème cat. = annuelle. 3ème cat. = tous les 2 ans. 4ème cat. = tous les 3 ans. La 5ème catégorie est dispensée de passage en commission sauf lors de l'ouverture.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "1ère catégorie — visite annuelle",
+            "2ème catégorie — visite annuelle",
+            "3ème catégorie — visite tous les 2 ans",
+            "4ème catégorie — visite tous les 3 ans"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q10",
+          "module_id": "ssiap1-box-2",
+          "display_order": 9,
+          "type": "categories",
+          "title": "Documents ERP",
+          "question": "Classez ces documents selon leur caractère obligatoire en ERP :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Registre ✅, Notice ✅, Plans ✅ = obligatoires. Les catalogues et revues ont une valeur documentaire mais ne sont pas des obligations réglementaires.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": [
+            {
+              "id": "obligatoire",
+              "label": "📌 Obligatoire réglementairement"
+            },
+            {
+              "id": "non",
+              "label": "💡 Utile mais non obligatoire"
+            }
+          ],
+          "category_items": [
+            {
+              "text": "Registre de sécurité",
+              "category": "obligatoire"
+            },
+            {
+              "text": "Notice descriptive de sécurité",
+              "category": "obligatoire"
+            },
+            {
+              "text": "Plan de masse à jour",
+              "category": "obligatoire"
+            },
+            {
+              "text": "Catalogue équipements",
+              "category": "non"
+            },
+            {
+              "text": "Revue professionnelle incendie",
+              "category": "non"
+            }
+          ],
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q11",
+          "module_id": "ssiap1-box-2",
+          "display_order": 10,
+          "type": "image-identify",
+          "title": "Panneau vert personnes",
+          "question": "Ce pictogramme vert représente :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "ISO 7010 E007 = Point de rassemblement. Lieu où tous les occupants doivent se regrouper après évacuation pour permettre le comptage et informer les secours.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "assembly",
+          "image_desc": "ISO 7010 — E007",
+          "options": [
+            "Une zone de repos pour le personnel",
+            "Le point de rassemblement après évacuation",
+            "Un vestiaire collectif",
+            "Un accès réservé aux secours"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q12",
+          "module_id": "ssiap1-box-2",
+          "display_order": 11,
+          "type": "decision",
+          "title": "Registre non tenu",
+          "question": "Quelle est la marche à suivre ?",
+          "scenario": "Vous prenez votre poste de SSIAP. En consultant le registre de sécurité, vous constatez qu'il n'a pas été rempli depuis 5 semaines et que plusieurs vérifications périodiques ne sont pas documentées.",
+          "situation": null,
+          "explanation": "Signaler → Rechercher les preuves existantes → Programmer les vérifications manquantes. La falsification de registre est une infraction pénale.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": [
+            1,
+            1,
+            0
+          ],
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": [
+            {
+              "question": "ÉTAPE 1 — Première action immédiate ?",
+              "options": [
+                {
+                  "text": "Remplir les dates manquantes rétrospectivement",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Documenter l'état des lacunes et alerter la hiérarchie",
+                  "nextStep": 1
+                },
+                {
+                  "text": "Attendre la prochaine commission pour signaler",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 2 — Les rapports de vérification technique (extincteurs, SSI) sont absents.",
+              "options": [
+                {
+                  "text": "Inventer des données vraisemblables",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Contacter les entreprises de maintenance pour obtenir les copies",
+                  "nextStep": 2
+                },
+                {
+                  "text": "Signaler à la commission sans attendre",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 3 — Une vérification annuelle d'extincteurs est dépassée de 2 mois.",
+              "options": [
+                {
+                  "text": "Programmer immédiatement la vérification et consigner dans le registre",
+                  "nextStep": null
+                },
+                {
+                  "text": "Attendre que quelqu'un s'en aperçoive",
+                  "nextStep": null
+                },
+                {
+                  "text": "Fermer l'établissement",
+                  "nextStep": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ssiap1-b2-q13",
+          "module_id": "ssiap1-box-2",
+          "display_order": 12,
+          "type": "true-false",
+          "title": "Permis de feu",
+          "question": "Dans un ERP, le permis de feu peut être accordé verbalement si le responsable sécurité est présent.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "FAUX — Le permis de feu (GN13) est TOUJOURS écrit, daté, signé des deux parties (donneur d'ordre + exécutant). Aucune exception. Un permis verbal n'a aucune valeur juridique.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q14",
+          "module_id": "ssiap1-box-2",
+          "display_order": 13,
+          "type": "scenario",
+          "title": "Commission de sécurité",
+          "question": "Le directeur a-t-il raison ?",
+          "scenario": "La commission de sécurité émet un avis défavorable lors de la visite périodique d'un ERP de 1ère catégorie. Le directeur affirme que la commission \"n'a pas le pouvoir de fermer\".",
+          "situation": null,
+          "explanation": "La commission émet un avis (favorable ou défavorable). En cas d'avis défavorable, le maire PEUT prendre un arrêté de fermeture. C'est le maire qui décide, mais il engage sa responsabilité en maintenant ouvert un ERP dangereux.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Oui — la commission ne fait que des recommandations",
+            "Non — un avis défavorable peut entraîner une fermeture administrative par le maire",
+            "Oui — seuls les tribunaux peuvent fermer un ERP",
+            "Non — c'est la préfecture qui décide directement"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b2-q15",
+          "module_id": "ssiap1-box-2",
+          "display_order": 14,
+          "type": "image-identify",
+          "title": "Flèche verte personnage",
+          "question": "Ce panneau vert avec personnage et flèche indique :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "ISO 7010 E003 = Direction vers une issue de secours. Ces panneaux jalonnent tout le cheminement d'évacuation. Ils doivent être visibles en permanence, de jour comme de nuit (rétro-éclairés ou luminescents).",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "exit-direction",
+          "image_desc": "ISO 7010 — E003",
+          "options": [
+            "Le sens de circulation habituel",
+            "La direction vers une issue de secours",
+            "Le poste de premiers secours",
+            "L'accès au stationnement"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        }
+      ]
+    },
+    {
+      "id": "ssiap1-box-3",
+      "level": 1,
+      "title": "Moyens de Secours",
+      "subtitle": "SSI, extincteurs, RIA, colonnes sèches",
+      "icon": "🧯",
+      "color": "from-cyan-500 to-blue-600",
+      "display_order": 2,
+      "is_active": true,
+      "questions": [
+        {
+          "id": "ssiap1-b3-q1",
+          "module_id": "ssiap1-box-3",
+          "display_order": 0,
+          "type": "scenario",
+          "title": "Alarme SSI — levée de doute",
+          "question": "Quelle est la procédure correcte ?",
+          "scenario": "Le tableau de signalisation affiche \"ALARME FEU — Zone 12 — Sous-sol parking\" depuis 2 minutes. Vous regardez les caméras de surveillance : aucune fumée visible. Votre responsable vous demande de réarmer immédiatement \"pour ne pas déranger\".",
+          "situation": null,
+          "explanation": "Toute alarme = levée de doute obligatoire avant réarmement. Réarmer sans vérification = faute professionnelle grave pouvant engager la responsabilité pénale. L'ordre hiérarchique ne supplante pas la procédure réglementaire.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Réarmer comme demandé — c'est sûrement un défaut technique",
+            "Refuser, effectuer une levée de doute physique et consigner l'événement",
+            "Appeler les pompiers sans rien faire d'autre",
+            "Inhiber la zone 12 pour éviter les fausses alarmes"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q2",
+          "module_id": "ssiap1-box-3",
+          "display_order": 1,
+          "type": "quiz",
+          "title": "Signification SSI",
+          "question": "Que désigne l'acronyme SSI ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "SSI = Système de Sécurité Incendie (norme NF S 61-931). Il comprend le SDI (Système de Détection Incendie) et le SMSI (Système de Mise en Sécurité Incendie).",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Service de Sécurité Incendie",
+            "Système de Sécurité Incendie",
+            "Surveillance et Sécurité des Installations",
+            "Système de Signalisation Intégrée"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q3",
+          "module_id": "ssiap1-box-3",
+          "display_order": 2,
+          "type": "true-false",
+          "title": "CO2 et feu de friture",
+          "question": "Un extincteur CO2 peut être utilisé sur un feu de friture (classe F) car il étouffe les flammes.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "FAUX — Le CO2 est DANGEREUX sur les feux de classe F. La pression du jet peut projeter l'huile bouillante et provoquer un embrasement violent (explosion d'huile). Seuls les extincteurs homologués pour classe F (à eau avec additif) conviennent.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q4",
+          "module_id": "ssiap1-box-3",
+          "display_order": 3,
+          "type": "find-intruder",
+          "title": "Ce qui n'est pas un DAS",
+          "question": "Parmi ces équipements, lequel N'EST PAS un Dispositif Actionné de Sécurité (DAS) ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Le DM (Déclencheur Manuel) est un dispositif d'ENTRÉE du SDI — il déclenche l'alarme. Les DAS sont des dispositifs de SORTIE du SMSI — ils agissent : portes CF, volets, clapets, exutoires de désenfumage.",
+          "correct_answer": 2,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Porte coupe-feu à fermeture automatique",
+            "Volet de désenfumage motorisé",
+            "Déclencheur Manuel d'alarme (boîtier rouge)",
+            "Clapet coupe-feu dans une gaine de ventilation"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q5",
+          "module_id": "ssiap1-box-3",
+          "display_order": 4,
+          "type": "matching",
+          "title": "Extincteur adapté au feu",
+          "question": "Associez chaque type de feu à l'extincteur le plus adapté :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Eau = refroidit les feux solides. CO2 = non conducteur pour l'électrique. Mousse = étouffement sur liquides. Poudre ABC = polyvalent mais salissant et dégrade le matériel électronique.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": [
+            {
+              "left": "Feu de bois et papier (classe A)",
+              "right": "Eau pulvérisée"
+            },
+            {
+              "left": "Feu d'installation électrique",
+              "right": "CO2"
+            },
+            {
+              "left": "Feu de liquide (classe B)",
+              "right": "Mousse"
+            },
+            {
+              "left": "Feu polyvalent A+B+C",
+              "right": "Poudre ABC"
+            }
+          ],
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q6",
+          "module_id": "ssiap1-box-3",
+          "display_order": 5,
+          "type": "sequence",
+          "title": "Catégories de SSI",
+          "question": "Classez les catégories de SSI de la PLUS COMPLÈTE à la PLUS SIMPLE :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "A (obligatoire IGH et ERP à sommeil important) → B → C → D (alarme + compartimentage partiel) → E (alarme seule). La catégorie A est la plus complète et la plus sûre.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Catégorie A : détection totale + toutes fonctions sécurité",
+            "Catégorie B : détection partielle + toutes fonctions sécurité",
+            "Catégorie C : alarme générale sans détection auto",
+            "Catégorie E : alarme générale seule"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q7",
+          "module_id": "ssiap1-box-3",
+          "display_order": 6,
+          "type": "multiple-select",
+          "title": "Vérifications extincteurs",
+          "question": "Quelles vérifications sont OBLIGATOIRES pour les extincteurs portatifs ? (plusieurs réponses)",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Contrôle visuel mensuel ✅, vérif. annuelle agréée ✅, plombage et pression ✅. L'épreuve hydraulique est tous les 10 ans ❌. Le remplacement systématique tous les 3 ans n'est pas une obligation réglementaire ❌.",
+          "correct_answer": null,
+          "correct_answers": [
+            0,
+            1,
+            4
+          ],
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Contrôle visuel mensuel par l'exploitant",
+            "Vérification technique annuelle par organisme agréé",
+            "Épreuve hydraulique tous les 5 ans",
+            "Remplacement automatique tous les 3 ans",
+            "Vérification du plombage et de l'indicateur de pression"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q8",
+          "module_id": "ssiap1-box-3",
+          "display_order": 7,
+          "type": "fill-blank",
+          "title": "Colonnes d'incendie",
+          "question": "Complétez la distinction fondamentale :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Colonne sèche : obligatoire dès 18m de hauteur de plancher bas. Colonne humide : obligatoire en IGH et grands ERP. La colonne humide offre une intervention immédiate sans attendre les pompiers.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": [
+            "colonne sèche",
+            "colonne humide"
+          ],
+          "correct_path": null,
+          "word_bank": [
+            "colonne sèche",
+            "colonne humide",
+            "colonne montante",
+            "RIA",
+            "sprinkler",
+            "tuyau d'attaque"
+          ],
+          "sentence": "La %1% est une canalisation vide alimentée en eau par les pompiers à l'arrivée. La %2% est maintenue sous pression en permanence par des surpresseurs avec des RIA à chaque étage.",
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q9",
+          "module_id": "ssiap1-box-3",
+          "display_order": 8,
+          "type": "ranking",
+          "title": "Ordre d'intervention extinction",
+          "question": "Classez ces moyens d'extinction par ordre d'intervention (du PREMIER déclenché au DERNIER) :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Sprinkler (automatique dès le départ de feu) → Extincteur (feu naissant) → RIA (feu développé) → Colonne (feu important avec sapeurs-pompiers). Chaque moyen correspond à une ampleur croissante du sinistre.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Sprinkler — déclenchement automatique dès 68°C",
+            "Extincteur portatif — première intervention humaine",
+            "RIA DN19/25 — deuxième intervention humaine",
+            "Colonne sèche ou humide — intervention des sapeurs-pompiers"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q10",
+          "module_id": "ssiap1-box-3",
+          "display_order": 9,
+          "type": "categories",
+          "title": "SDI ou SMSI",
+          "question": "Classez ces équipements dans leur sous-système SSI :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "SDI = Détecte et signale : détecteurs automatiques, DM, ECS, ECSAV. SMSI = Agit sur l'environnement : CMSI + tous les DAS (portes CF, volets, clapets, exutoires).",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": [
+            {
+              "id": "sdi",
+              "label": "🔍 SDI — Système de Détection"
+            },
+            {
+              "id": "smsi",
+              "label": "⚡ SMSI — Mise en Sécurité"
+            }
+          ],
+          "category_items": [
+            {
+              "text": "Détecteur optique de fumée",
+              "category": "sdi"
+            },
+            {
+              "text": "Déclencheur Manuel (DM)",
+              "category": "sdi"
+            },
+            {
+              "text": "CMSI (Centralisateur)",
+              "category": "smsi"
+            },
+            {
+              "text": "Volet de désenfumage",
+              "category": "smsi"
+            },
+            {
+              "text": "ECS (Équipement de Contrôle)",
+              "category": "sdi"
+            },
+            {
+              "text": "Porte coupe-feu motorisée",
+              "category": "smsi"
+            }
+          ],
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q11",
+          "module_id": "ssiap1-box-3",
+          "display_order": 10,
+          "type": "image-identify",
+          "title": "Panneau rouge extincteur",
+          "question": "Ce panneau carré rouge avec un extincteur blanc indique :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "ISO 7010 F001 = Emplacement d'un extincteur. Carré rouge = matériel de lutte incendie. Il doit être visible à 15 mètres maximum. L'extincteur doit être accessible sans obstacle.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "extinguisher",
+          "image_desc": "ISO 7010 — F001",
+          "options": [
+            "Un local à risque d'incendie",
+            "L'emplacement d'un extincteur portatif",
+            "Un poste de premiers secours",
+            "Une sortie de secours équipée"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q12",
+          "module_id": "ssiap1-box-3",
+          "display_order": 11,
+          "type": "decision",
+          "title": "Anomalie sprinkler",
+          "question": "Procédure de gestion de la défaillance :",
+          "scenario": "Une alarme \"Manque de pression réseau sprinkler\" s'affiche sur le tableau de bord du PC sécurité. Il est 23h00, l'établissement est ouvert avec 150 personnes.",
+          "situation": null,
+          "explanation": "Alerter → Mesures compensatoires (rondes) → Traçabilité complète (main courante + registre + transmission à la relève). Le sprinkler en panne = risque majeur → surveillance renforcée.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": [
+            1,
+            1,
+            0
+          ],
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": [
+            {
+              "question": "ÉTAPE 1 — Première action ?",
+              "options": [
+                {
+                  "text": "Réarmer l'alarme et attendre le matin",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Alerter la hiérarchie et contacter l'astreinte technique",
+                  "nextStep": 1
+                },
+                {
+                  "text": "Évacuer immédiatement l'établissement",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 2 — En attendant l'intervention technique (délai 30 min) ?",
+              "options": [
+                {
+                  "text": "Ne rien faire — 30 min c'est court",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Mettre en place des rondes renforcées dans les zones concernées",
+                  "nextStep": 2
+                },
+                {
+                  "text": "Couper le réseau sprinkler pour éviter les faux déclenchements",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 3 — L'anomalie est consignée. Que faire avant de quitter votre poste ?",
+              "options": [
+                {
+                  "text": "Consigner dans le registre de sécurité et la main courante, transmettre à la relève",
+                  "nextStep": null
+                },
+                {
+                  "text": "Mettre seulement un post-it sur l'écran",
+                  "nextStep": null
+                },
+                {
+                  "text": "Rien — la maintenance a géré",
+                  "nextStep": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ssiap1-b3-q13",
+          "module_id": "ssiap1-box-3",
+          "display_order": 12,
+          "type": "quiz",
+          "title": "Inhibition de zone SSI",
+          "question": "Qu'est-ce qu'une \"inhibition de zone\" dans un SSI ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Inhibition = mise hors service temporaire d'une zone (travaux, maintenance). Nécessite un niveau d'accès 2 minimum, une documentation écrite et des mesures compensatoires (rondes, surveillance humaine renforcée).",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Le déclenchement volontaire d'une alarme pour test",
+            "La désactivation temporaire d'une zone de détection pour travaux",
+            "La mise en service d'une nouvelle zone après installation",
+            "La réinitialisation complète du système après alarme"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q14",
+          "module_id": "ssiap1-box-3",
+          "display_order": 13,
+          "type": "true-false",
+          "title": "Test mensuel BAES",
+          "question": "Un BAES (Bloc Autonome d'Éclairage de Sécurité) doit obligatoirement être testé tous les mois par l'exploitant.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "VRAI — Le test mensuel (appui sur le bouton \"test\" : vérification de l'allumage) est obligatoire. Un contrôle annuel approfondi (autonomie, état de la batterie) doit être réalisé par un technicien qualifié.",
+          "correct_answer": 0,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b3-q15",
+          "module_id": "ssiap1-box-3",
+          "display_order": 14,
+          "type": "image-identify",
+          "title": "Panneau RIA",
+          "question": "Ce panneau rouge circulaire avec tuyau indique l'emplacement d'un :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "RIA = Robinet d'Incendie Armé. Équipement de 2ème intervention composé d'un robinet, un dévidoir et un tuyau semi-rigide. Toujours en eau. Nécessite une formation avant utilisation. Portée 15-20 mètres.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "ria",
+          "image_desc": "Panneau réglementaire RIA",
+          "options": [
+            "Extincteur portatif",
+            "Robinet d'Incendie Armé (RIA)",
+            "Poste de premiers secours",
+            "Point d'alimentation colonne sèche"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        }
+      ]
+    },
+    {
+      "id": "ssiap1-box-4",
+      "level": 1,
+      "title": "Évacuation & Organisation",
+      "subtitle": "Dégagements, rôles, exercices",
+      "icon": "🚪",
+      "color": "from-emerald-500 to-teal-600",
+      "display_order": 3,
+      "is_active": true,
+      "questions": [
+        {
+          "id": "ssiap1-b4-q1",
+          "module_id": "ssiap1-box-4",
+          "display_order": 0,
+          "type": "scenario",
+          "title": "Serre-file face à un récalcitrant",
+          "question": "Quelle est votre action correcte ?",
+          "scenario": "Lors d'une évacuation déclenchée par l'alarme, vous êtes serre-file au 3ème étage. Un cadre supérieur refuse d'évacuer et dit : \"Je suis en réunion importante, c'est encore une fausse alarme\".",
+          "situation": null,
+          "explanation": "Le serre-file tente de convaincre fermement. Si refus persistant : noter son identité, localisation précise, et en informer immédiatement le responsable d'évacuation et les pompiers à l'arrivée. Ne jamais abandonner sans signaler.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Le laisser — vous ne pouvez pas forcer un supérieur hiérarchique",
+            "Tenter de le convaincre, si refus noter son identité et prévenir le responsable d'évacuation",
+            "L'escorter physiquement de force",
+            "Continuer sans lui — c'est son problème"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q2",
+          "module_id": "ssiap1-box-4",
+          "display_order": 1,
+          "type": "quiz",
+          "title": "Unité de passage",
+          "question": "Quelle est la largeur d'une Unité de Passage (UP) réglementaire en ERP ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "1 UP = 0,60 m. Les dégagements sont calculés en nombre d'UP selon l'effectif. Ex : une porte de 0,90 m = 1 UP. Une largeur de 1,40 m = 2 UP. Ces calculs garantissent un débit d'évacuation suffisant.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "0,40 m",
+            "0,60 m",
+            "0,80 m",
+            "1,00 m"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q3",
+          "module_id": "ssiap1-box-4",
+          "display_order": 2,
+          "type": "find-intruder",
+          "title": "Action correcte en évacuation",
+          "question": "Lequel de ces comportements est CORRECT lors d'une évacuation d'urgence ?",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Se rendre calmement au point de rassemblement ✅. Ascenseur ❌ (risque de coupure). Retourner ❌ (risque mortel). Ouvrir les portes CF ❌ (laissent passer le feu et la fumée, elles doivent RESTER FERMÉES).",
+          "correct_answer": 2,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Prendre l'ascenseur pour gagner du temps",
+            "Retourner chercher son manteau et son téléphone",
+            "Se rendre calmement au point de rassemblement",
+            "Ouvrir toutes les portes coupe-feu pour faciliter le passage"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q4",
+          "module_id": "ssiap1-box-4",
+          "display_order": 3,
+          "type": "true-false",
+          "title": "Sens d'ouverture des portes",
+          "question": "Une porte de sortie desservant plus de 50 personnes doit obligatoirement s'ouvrir dans le sens de l'évacuation.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "VRAI — Article CO 44 : dès 50 personnes, porte obligatoirement dans le sens de la sortie pour éviter l'effet de bouchon lors d'une bousculade. En dessous de 50, les deux sens sont autorisés.",
+          "correct_answer": 0,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q5",
+          "module_id": "ssiap1-box-4",
+          "display_order": 4,
+          "type": "matching",
+          "title": "Rôles lors de l'évacuation",
+          "question": "Associez chaque acteur à sa mission principale lors de l'évacuation :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Guide-file = en tête de groupe. Serre-file = en queue, dernier sorti, portes fermées. SSIAP = interface avec les pompiers (plans, clés). Responsable = autorité de décision.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": [
+            {
+              "left": "Guide-file",
+              "right": "Ouvre la marche et guide vers la sortie"
+            },
+            {
+              "left": "Serre-file",
+              "right": "Ferme la marche, vérifie les locaux, ferme les portes"
+            },
+            {
+              "left": "Agent SSIAP",
+              "right": "Coordonne l'évacuation et accueille les secours"
+            },
+            {
+              "left": "Responsable d'évacuation",
+              "right": "Décide et supervise l'ensemble du dispositif"
+            }
+          ],
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q6",
+          "module_id": "ssiap1-box-4",
+          "display_order": 5,
+          "type": "sequence",
+          "title": "Procédure d'alerte",
+          "question": "Remettez dans l'ordre les étapes de la procédure d'alerte en cas d'incendie découvert :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Découverte → Alarme (pour évacuer tout le monde) → Alerte secours (18/112) → Accueil des pompiers avec plan, clés, informations. L'alarme AVANT l'alerte externe.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Découvrir ou constater le sinistre",
+            "Déclencher le Déclencheur Manuel d'alarme le plus proche",
+            "Alerter les sapeurs-pompiers (18 ou 112)",
+            "Accueillir et guider les secours à leur arrivée"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q7",
+          "module_id": "ssiap1-box-4",
+          "display_order": 6,
+          "type": "multiple-select",
+          "title": "Éclairage de sécurité",
+          "question": "Quels équipements font partie du système d'éclairage de sécurité réglementaire ? (plusieurs réponses)",
+          "scenario": null,
+          "situation": null,
+          "explanation": "BAES ✅, éclairage d'ambiance/anti-panique ✅, source centralisée ✅. Néon secteur ❌ (s'éteint en coupure). BAAS ❌ = alarme sonore, pas éclairage.",
+          "correct_answer": null,
+          "correct_answers": [
+            0,
+            2,
+            3
+          ],
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "BAES (Bloc Autonome d'Éclairage de Sécurité)",
+            "Néon fluorescent standard alimenté secteur",
+            "Éclairage d'ambiance anti-panique",
+            "Source centralisée sur batteries avec luminaires déportés",
+            "BAAS (Bloc Autonome d'Alarme Sonore)"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q8",
+          "module_id": "ssiap1-box-4",
+          "display_order": 7,
+          "type": "fill-blank",
+          "title": "Autonomie éclairage",
+          "question": "Complétez les exigences réglementaires sur l'éclairage de sécurité :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "1 heure minimum d'autonomie sur batteries intégrées (BAES). Allumage automatique dès coupure secteur. Permet l'évacuation en toute sécurité même lors d'une coupure électrique totale.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": [
+            "1",
+            "normale"
+          ],
+          "correct_path": null,
+          "word_bank": [
+            "1",
+            "normale",
+            "2",
+            "secours",
+            "3",
+            "principale"
+          ],
+          "sentence": "L'éclairage de sécurité doit fonctionner au minimum %1% heure en cas de coupure et doit s'allumer automatiquement dès la perte de l'alimentation %2%.",
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q9",
+          "module_id": "ssiap1-box-4",
+          "display_order": 8,
+          "type": "ranking",
+          "title": "Phases de l'évacuation",
+          "question": "Classez ces phases dans l'ordre chronologique correct d'une évacuation réussie :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Alarme → Évacuation ordonnée → Comptage (vérifier que personne ne manque) → Retour exclusivement après feu maître. Ne JAMAIS retourner sans autorisation des pompiers.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": [
+            "Déclenchement du signal d'alarme sonore",
+            "Évacuation guidée des occupants par les guides-files",
+            "Comptage et appel au point de rassemblement",
+            "Retour autorisé uniquement par les sapeurs-pompiers"
+          ],
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q10",
+          "module_id": "ssiap1-box-4",
+          "display_order": 9,
+          "type": "categories",
+          "title": "Actions lors de l'évacuation",
+          "question": "Classez ces comportements lors de l'évacuation :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "Déclencher le DM ✅, fermer les portes ✅ (ralentit le feu), rejoindre le point ✅. Ascenseur ❌, retour dans le bâtiment ❌ — ces deux comportements causent des décès chaque année.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": [
+            {
+              "id": "ok",
+              "label": "✅ À faire impérativement"
+            },
+            {
+              "id": "nok",
+              "label": "🚫 Strictement interdit"
+            }
+          ],
+          "category_items": [
+            {
+              "text": "Déclencher le DM en quittant son poste",
+              "category": "ok"
+            },
+            {
+              "text": "Fermer la porte de son bureau derrière soi",
+              "category": "ok"
+            },
+            {
+              "text": "Prendre l'ascenseur pour les étages supérieurs",
+              "category": "nok"
+            },
+            {
+              "text": "Rejoindre le point de rassemblement désigné",
+              "category": "ok"
+            },
+            {
+              "text": "Retourner récupérer un document urgent",
+              "category": "nok"
+            }
+          ],
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q11",
+          "module_id": "ssiap1-box-4",
+          "display_order": 10,
+          "type": "image-identify",
+          "title": "Équipement vert lumineux",
+          "question": "Cet équipement avec pictogramme de sortie lumineux est un :",
+          "scenario": null,
+          "situation": null,
+          "explanation": "BAES = Bloc Autonome d'Éclairage de Sécurité. Batterie intégrée, autonomie 1h minimum. S'allume automatiquement sur coupure secteur. Test mensuel obligatoire par l'exploitant (bouton \"test\").",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": "baes",
+          "image_desc": "BAES — Bloc Autonome Éclairage Sécurité",
+          "options": [
+            "Détecteur de fumée optique",
+            "Bloc Autonome d'Éclairage de Sécurité (BAES)",
+            "Déclencheur manuel d'alarme",
+            "Diffuseur sonore d'alarme incendie"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q12",
+          "module_id": "ssiap1-box-4",
+          "display_order": 11,
+          "type": "decision",
+          "title": "Exercice d'évacuation décevant",
+          "question": "Comment gérez-vous le retour d'expérience ?",
+          "scenario": "L'exercice d'évacuation annuel vient de se terminer : 14 minutes pour évacuer 180 personnes sur 3 étages. Le précédent exercice avait duré 7 minutes. Un goulot d'étranglement a été observé dans l'escalier B.",
+          "situation": null,
+          "explanation": "Débriefing immédiat → Analyse fine des causes → Compte-rendu complet au registre avec plan d'amélioration. L'exercice n'a de valeur que s'il génère des actions correctives.",
+          "correct_answer": null,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": [
+            1,
+            1,
+            1
+          ],
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": null,
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": [
+            {
+              "question": "ÉTAPE 1 — Après l'exercice, que faites-vous en premier ?",
+              "options": [
+                {
+                  "text": "Féliciter quand même tout le monde",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Réunir les guides-files et serres-files pour un débriefing à chaud",
+                  "nextStep": 1
+                },
+                {
+                  "text": "Appeler les pompiers pour signaler un dysfonctionnement",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 2 — Goulot d'étranglement dans l'escalier B : quelle analyse faites-vous ?",
+              "options": [
+                {
+                  "text": "C'est normal, les gens ne savent pas évacuer",
+                  "nextStep": 99
+                },
+                {
+                  "text": "Identifier la cause : largeur insuffisante, affectation de l'escalier C non communiquée, panique ?",
+                  "nextStep": 2
+                },
+                {
+                  "text": "Interdire cet escalier sans analyse",
+                  "nextStep": 99
+                }
+              ]
+            },
+            {
+              "question": "ÉTAPE 3 — Que consignez-vous dans le registre de sécurité ?",
+              "options": [
+                {
+                  "text": "Le temps total uniquement",
+                  "nextStep": null
+                },
+                {
+                  "text": "Compte-rendu complet : temps, effectif, anomalies, analyse des causes, plan d'amélioration et mesures correctives",
+                  "nextStep": null
+                },
+                {
+                  "text": "Rien — c'était un exercice, pas un vrai sinistre",
+                  "nextStep": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ssiap1-b4-q13",
+          "module_id": "ssiap1-box-4",
+          "display_order": 12,
+          "type": "true-false",
+          "title": "Rôle du serre-file",
+          "question": "Le serre-file doit laisser toutes les portes ouvertes derrière lui pour faciliter la circulation lors de l'évacuation.",
+          "scenario": null,
+          "situation": null,
+          "explanation": "FAUX — Le serre-file doit FERMER toutes les portes coupe-feu derrière lui. Une porte CF fermée ralentit la progression du feu et de la fumée de 30 à 120 minutes selon sa résistance. C'est une des actions les plus efficaces lors d'une évacuation.",
+          "correct_answer": 1,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "Vrai",
+            "Faux"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        },
+        {
+          "id": "ssiap1-b4-q14",
+          "module_id": "ssiap1-box-4",
+          "display_order": 13,
+          "type": "scenario",
+          "title": "PMR coincée en hauteur",
+          "question": "Quelle est la procédure correcte ?",
+          "scenario": "Lors de l'évacuation, vous croisez une collègue en fauteuil roulant au 4ème étage. L'ascenseur est neutralisé. Les escaliers sont inaccessibles pour elle.",
+          "situation": null,
+          "explanation": "EAS = Espace d'Attente Sécurisé, adjacent aux escaliers, protégé du feu. La PMR y attend les pompiers dans une zone sécurisée. Sa position DOIT être communiquée aux secours à l'arrivée. Porter une personne dans des escaliers peut blesser les deux parties.",
+          "correct_answer": 2,
+          "correct_answers": null,
+          "correct_order": null,
+          "correct_blanks": null,
+          "correct_path": null,
+          "word_bank": null,
+          "sentence": null,
+          "image_url": null,
+          "video_url": null,
+          "image_key": null,
+          "image_desc": null,
+          "options": [
+            "La porter seul dans les escaliers malgré le risque",
+            "La laisser — les pompiers s'en chargeront",
+            "La conduire dans l'Espace d'Attente Sécurisé (EAS) le plus proche et signaler sa position aux secours",
+            "Lui demander d'attendre que la fumée se dissipe"
+          ],
+          "items": null,
+          "pairs": null,
+          "categories": null,
+          "category_items": null,
+          "decision_steps": null
+        }
+      ]
+    }
+  ]
+}
