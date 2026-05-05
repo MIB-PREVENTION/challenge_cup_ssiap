@@ -339,8 +339,10 @@ async function writePath(path, value, mode /* 'set' | 'update' */) {
     const sid = await sessionUuidByCode(op.code);
     if (!sid) return;
     const v = value || {};
+    const ALLOWED_LEVELS = new Set(['info','warn','error','success','debug']);
+    const level = ALLOWED_LEVELS.has(v.level) ? v.level : 'info';
     await sb.from('logs').insert({
-      session_id: sid, level: v.level || 'info', category: v.category, message: v.message,
+      session_id: sid, level, category: v.category, message: v.message,
       team_name: v.team || null, metadata: v,
     });
     return;
