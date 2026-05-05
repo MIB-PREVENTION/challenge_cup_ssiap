@@ -77,7 +77,28 @@ function s2fSession(row) {
   // teams sub-tree is loaded lazily; consumers read via separate paths.
   return o;
 }
-function f2sTeam(obj) { return mapKeys(obj, TEAM_F2S); }
+// Allowed Supabase columns on `teams`. Anything else from the legacy payload
+// (e.g. `answerTime`) is dropped silently to avoid 4xx from PostgREST.
+const TEAM_COLUMNS = new Set([
+  'id','session_id','name','avatar','score','total_correct','total_answered',
+  'has_answered','online','joined_at','last_seen_at','current_answer',
+  'current_is_correct','last_points','last_speed_bonus','last_offline_log',
+]);
+const TEAM_TS_COLUMNS = new Set(['joined_at','last_seen_at','last_offline_log']);
+
+function f2sTeam(obj) {
+  const renamed = mapKeys(obj, TEAM_F2S);
+  const out = {};
+  for (const [k, v] of Object.entries(renamed)) {
+    if (!TEAM_COLUMNS.has(k)) continue;
+    if (TEAM_TS_COLUMNS.has(k) && typeof v === 'number') {
+      out[k] = new Date(v).toISOString();
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
 function s2fTeam(row) {
   if (!row) return row;
   const o = mapKeys(row, TEAM_S2F);
