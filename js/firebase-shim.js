@@ -46,6 +46,7 @@ const TEAM_F2S = {
   hasAnswered:      'has_answered',
   isCorrect:        'current_is_correct',
   answer:           'current_answer',
+  answerTime:       'answer_time',
   online:           'online',
   totalCorrect:     'total_correct',
   totalAnswered:    'total_answered',
@@ -83,6 +84,7 @@ const TEAM_COLUMNS = new Set([
   'id','session_id','name','avatar','score','total_correct','total_answered',
   'has_answered','online','joined_at','last_seen_at','current_answer',
   'current_is_correct','last_points','last_speed_bonus','last_offline_log',
+  'answer_time',
 ]);
 const TEAM_TS_COLUMNS = new Set(['joined_at','last_seen_at','last_offline_log']);
 
