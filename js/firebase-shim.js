@@ -353,7 +353,10 @@ async function writePath(path, value, mode /* 'set' | 'update' */) {
   }
   if (op.kind === 'team-field') {
     const col = TEAM_F2S[op.field] ?? op.field;
-    await sb.from('teams').update({ [col]: value }).eq('id', op.teamId);
+    if (!TEAM_COLUMNS.has(col)) return;  // drop unknown fields (e.g. legacy answerTime)
+    let v = value;
+    if (TEAM_TS_COLUMNS.has(col) && typeof v === 'number') v = new Date(v).toISOString();
+    await sb.from('teams').update({ [col]: v }).eq('id', op.teamId);
     return;
   }
   if (op.kind === 'log') {
@@ -398,8 +401,11 @@ async function multiUpdate(updates) {
     const op = parsePath(k);
     if (op.kind === 'team-field') {
       const col = TEAM_F2S[op.field] ?? op.field;
+      if (!TEAM_COLUMNS.has(col)) continue;  // drop unknown fields
+      let val = v;
+      if (TEAM_TS_COLUMNS.has(col) && typeof val === 'number') val = new Date(val).toISOString();
       const t = teams.get(op.teamId) ?? { code: op.code, fields: {} };
-      t.fields[col] = v; teams.set(op.teamId, t);
+      t.fields[col] = val; teams.set(op.teamId, t);
     } else if (op.kind === 'session-field') {
       const col = SESSION_F2S[op.field] ?? op.field;
       const s = sessions.get(op.code) ?? {};
