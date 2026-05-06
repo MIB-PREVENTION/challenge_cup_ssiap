@@ -416,13 +416,15 @@ async function multiUpdate(updates) {
       s[col] = val; sessions.set(op.code, s);
     }
   }
-  for (const [tid, info] of teams) {
-    await sb.from('teams').update(info.fields).eq('id', tid);
-  }
-  for (const [code, fields] of sessions) {
-    const sid = await sessionUuidByCode(code);
-    if (sid) await sb.from('sessions').update(fields).eq('id', sid);
-  }
+  // Run all updates in parallel for snappier transitions.
+  await Promise.all([
+    ...[...teams.entries()].map(([tid, info]) =>
+      sb.from('teams').update(info.fields).eq('id', tid)),
+    ...[...sessions.entries()].map(async ([code, fields]) => {
+      const sid = await sessionUuidByCode(code);
+      if (sid) return sb.from('sessions').update(fields).eq('id', sid);
+    }),
+  ]);
 }
 
 // Increment a numeric field (for `.transaction(c => (c||0)+count)`).
