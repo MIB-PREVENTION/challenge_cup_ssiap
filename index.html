@@ -494,6 +494,23 @@
                 <h3 class="text-xl font-bold mb-4 text-gray-800">🏅 Classement Final</h3>
                 <div id="trainee-ranking-final" class="space-y-2"></div>
             </div>
+            <button id="trainee-review-btn" onclick="openTraineeReview()" class="w-full ssiap-gradient text-white text-lg font-bold py-3 rounded-xl shadow-lg">📋 Voir mes réponses</button>
+        </div>
+    </div>
+
+    <!-- MODAL : revue des réponses du stagiaire -->
+    <div id="trainee-review-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b-2 border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">📋 Revue de vos réponses</h3>
+                <button onclick="closeTraineeReview()" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full font-bold text-gray-600">✕</button>
+            </div>
+            <div class="flex gap-2 px-4 pt-3 text-xs">
+                <button id="review-tab-all"  onclick="filterTraineeReview('all')"  class="px-3 py-1 bg-blue-500 text-white rounded-full font-bold">Toutes</button>
+                <button id="review-tab-bad"  onclick="filterTraineeReview('bad')"  class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-bold">❌ Mes erreurs</button>
+                <button id="review-tab-good" onclick="filterTraineeReview('good')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-bold">✅ Correctes</button>
+            </div>
+            <div id="trainee-review-content" class="overflow-y-auto p-4 flex-1 space-y-3"></div>
         </div>
     </div>
 
@@ -599,6 +616,7 @@ let currentBox=0,currentGameIndex=0;
 let selectedAnswer=null,selectedSequence=[],selectedMultiple=[],selectedRanking=[];
 let fillBlankAnswers=[],categoriesAnswers={},decisionPath=[],selectedCatItem=null;
 let lastTraineeGame=null,openedBoxes=[];
+let traineeAnswerLog=[]; // accumulated for end-of-game review
 const TRAINEE_AVATARS=['🛡️','🚒','👨‍🚒','👩‍🚒','🧯','🔥','⛑️','🦸','🦸‍♀️','🥷','👮','🚨'];
 let selectedAvatar='🛡️';
 let pendingAvatarFile=null; // photo picked but not yet uploaded
@@ -923,6 +941,65 @@ function playBuzzer(){
 // Applause / fanfare for podium (optional)
 function playFanfare(){
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone({freq:f,duration:.18,volume:.22,type:'triangle'}),i*120));
+}
+
+// One synthesized 'clap' — short band-pass-filtered noise burst.
+function playClap(volume=.18){
+    const ctx=audioCtx();if(!ctx)return;
+    const t=ctx.currentTime;
+    const dur=.06;
+    const bufferSize=Math.floor(ctx.sampleRate*dur);
+    const buf=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufferSize;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/bufferSize,2);
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1500+Math.random()*1500;filter.Q.value=1.5;
+    const gain=ctx.createGain();gain.gain.setValueAtTime(volume,t);gain.gain.exponentialRampToValueAtTime(.001,t+dur);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(t);src.stop(t+dur+.02);
+}
+// Procedural applause: dozens of overlapping claps over ~3.5s, growing to a
+// crowd peak then tapering off. Falls back to this if /sounds/applause.mp3
+// is missing or fails to load.
+function playApplauseProcedural(){
+    const total=120,duration=3.5;
+    for(let i=0;i<total;i++){
+        // ramp density: more claps in the middle
+        const t=i/total;
+        const peak=1-Math.abs(t-.5)*1.6;
+        const delay=t*duration*1000+Math.random()*60;
+        const vol=.06+peak*.16+Math.random()*.05;
+        setTimeout(()=>playClap(vol),delay);
+    }
+    // a low ambient 'crowd noise' rumble layer
+    const ctx=audioCtx();if(!ctx)return;
+    const now=ctx.currentTime;
+    const noiseLen=ctx.sampleRate*duration;
+    const buf=ctx.createBuffer(1,noiseLen,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<noiseLen;i++)data[i]=(Math.random()*2-1)*0.4;
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1200;filter.Q.value=.7;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(0,now);
+    gain.gain.linearRampToValueAtTime(.08,now+.4);
+    gain.gain.linearRampToValueAtTime(.05,now+duration-.5);
+    gain.gain.linearRampToValueAtTime(0,now+duration);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(now);src.stop(now+duration+.05);
+}
+// Try a real applause MP3 first; fall back to procedural.
+let _applauseAudio=null;
+function playApplause(){
+    try{
+        if(!_applauseAudio){
+            _applauseAudio=new Audio('sounds/applause.mp3');
+            _applauseAudio.preload='auto';
+            _applauseAudio.volume=.7;
+        }
+        _applauseAudio.currentTime=0;
+        _applauseAudio.play().catch(()=>playApplauseProcedural());
+    }catch{playApplauseProcedural();}
 }
 
 function startQuestionTimer(){
@@ -1321,6 +1398,7 @@ function displayRanking(cId){
 /* ════ PODIUMS ════ */
 function showPodiumSupervisor(){
     showScreenSafe('podium-screen');database.ref('sessions/'+sessionId+'/gameStatus').set('finished');createConfetti();
+    playApplause();
     database.ref('sessions/'+sessionId+'/teams').once('value',snap=>{
         const teams=snap.val();if(!teams)return;
         const arr=Object.entries(teams).map(([id,t])=>({id,name:t?.name||'?',score:t?.score||0})).sort((a,b)=>b.score-a.score);
@@ -1351,6 +1429,93 @@ function showPodiumTrainee(){
         document.getElementById('trainee-ranking-final').innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-3 ${t.id===teamId?'bg-blue-100 border-2 border-blue-400':(i<3?'bg-yellow-50':'bg-gray-50')} rounded-xl"><div class="flex items-center gap-3"><span class="text-lg">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span><div><div class="font-bold text-gray-800 text-sm">${t.name}${t.id===teamId?' 👈':''}</div><div class="text-xs text-gray-500">${t.totalAnswered>0?Math.round((t.totalCorrect/t.totalAnswered)*100)+'% réussite':''}</div></div></div><span class="text-lg font-bold text-primary">${t.score} pts</span></div>`).join('');
     });
 }
+/* ════ REVUE DES RÉPONSES — STAGIAIRE ════ */
+let traineeReviewFilter='all';
+
+function formatAnswerValue(game,value){
+    if(value==null)return '<span class="text-gray-400 italic">— pas de réponse —</span>';
+    const opts=game.optionsWithIndex||(game.options?game.options.map((t,i)=>({text:t,originalIndex:i})):[]);
+    const findOpt=idx=>opts.find(o=>o.originalIndex===idx)?.text||`#${idx}`;
+    if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+        return findOpt(value);
+    }
+    if(game.type==='multiple-select'){
+        return Array.isArray(value)?value.map(findOpt).map(t=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${t}</span>`).join(''):String(value);
+    }
+    if(game.type==='sequence'||game.type==='ranking'){
+        const items=game.itemsWithIndex||(game.items?game.items.map((t,i)=>({text:t,originalIndex:i})):[]);
+        return Array.isArray(value)?value.map((idx,i)=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${i+1}. ${items.find(x=>x.originalIndex===idx)?.text||`#${idx}`}</span>`).join(''):String(value);
+    }
+    if(game.type==='fill-blank'){
+        return Array.isArray(value)?value.map(t=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${t}</span>`).join(''):String(value);
+    }
+    if(game.type==='matching'){
+        return `<span class="text-xs italic">${(Array.isArray(value)?value.length:0)} paires faites</span>`;
+    }
+    if(game.type==='decision'){
+        return Array.isArray(value)?value.map((c,i)=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">É${i+1}: opt ${c+1}</span>`).join(''):String(value);
+    }
+    if(game.type==='categories'){
+        return `<span class="text-xs italic">classement par catégories</span>`;
+    }
+    return JSON.stringify(value);
+}
+function formatCorrectAnswer(game){
+    if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+        return formatAnswerValue(game,game.correctAnswer);
+    }
+    if(game.type==='multiple-select')return formatAnswerValue(game,game.correctAnswers);
+    if(game.type==='sequence'||game.type==='ranking')return formatAnswerValue(game,game.correctOrder);
+    if(game.type==='fill-blank')return formatAnswerValue(game,game.correctBlanks);
+    if(game.type==='decision')return formatAnswerValue(game,game.correctPath);
+    if(game.type==='matching')return `<span class="text-xs italic">toutes les paires correctes</span>`;
+    if(game.type==='categories')return `<span class="text-xs italic">cf. correction projetée</span>`;
+    return '';
+}
+
+function renderTraineeReview(){
+    const el=document.getElementById('trainee-review-content');if(!el)return;
+    const data=traineeAnswerLog.filter(r=>{
+        if(traineeReviewFilter==='good')return r.isCorrect;
+        if(traineeReviewFilter==='bad')return !r.isCorrect;
+        return true;
+    });
+    if(!data.length){el.innerHTML='<div class="text-center text-gray-500 py-8">Aucune réponse à afficher.</div>';return;}
+    el.innerHTML=data.map((r,i)=>{
+        const g=r.game;
+        const ok=r.isCorrect;
+        const border=ok?'border-green-400 bg-green-50':'border-red-400 bg-red-50';
+        const head=ok?'<span class="text-green-700 font-bold">✅ Correcte</span>':'<span class="text-red-700 font-bold">❌ Incorrecte</span>';
+        return `<div class="border-2 ${border} rounded-xl p-3 text-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs px-2 py-0.5 rounded bg-white text-gray-600 font-bold">${getGameTypeLabel(g.type)}</span>
+                ${head}
+            </div>
+            <div class="font-bold text-gray-800 mb-2">${g.question}</div>
+            <div class="text-xs text-gray-600 mb-1"><strong>Votre réponse :</strong> ${formatAnswerValue(g,r.given)}</div>
+            ${ok?'':`<div class="text-xs text-gray-600 mb-1"><strong>Bonne réponse :</strong> ${formatCorrectAnswer(g)}</div>`}
+            ${g.explanation?`<div class="mt-2 text-xs text-blue-800 bg-blue-50 rounded p-2"><strong>💡 </strong>${g.explanation}</div>`:''}
+        </div>`;
+    }).join('');
+}
+window.openTraineeReview=function(){
+    traineeReviewFilter='all';
+    document.querySelectorAll('#trainee-review-modal [id^="review-tab-"]').forEach(b=>b.classList.replace('bg-blue-500','bg-gray-200')&&b.classList.replace('text-white','text-gray-700'));
+    const all=document.getElementById('review-tab-all');all.classList.replace('bg-gray-200','bg-blue-500');all.classList.replace('text-gray-700','text-white');
+    renderTraineeReview();
+    document.getElementById('trainee-review-modal').classList.remove('hidden');
+};
+window.closeTraineeReview=function(){document.getElementById('trainee-review-modal').classList.add('hidden');};
+window.filterTraineeReview=function(f){
+    traineeReviewFilter=f;
+    ['all','bad','good'].forEach(k=>{
+        const b=document.getElementById('review-tab-'+k);if(!b)return;
+        if(k===f){b.classList.replace('bg-gray-200','bg-blue-500');b.classList.replace('text-gray-700','text-white');}
+        else{b.classList.replace('bg-blue-500','bg-gray-200');b.classList.replace('text-white','text-gray-700');}
+    });
+    renderTraineeReview();
+};
+
 document.getElementById('back-dashboard-podium-btn').addEventListener('click',()=>showScreenSafe('supervisor-dashboard'));
 document.getElementById('restart-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
 document.getElementById('reset-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
@@ -1526,7 +1691,12 @@ function validateTraineeAnswer(game){
     else if(game.type==='decision'){answer=decisionPath.map(p=>p.choice);isCorrect=JSON.stringify(answer)===JSON.stringify(game.correctPath);}
     database.ref('sessions/'+sessionId+'/teams/'+teamId).update({hasAnswered:true,answer,isCorrect,answerTime:elapsed})
         .then(()=>database.ref('sessions/'+sessionId+'/answersCount').transaction(c=>(c||0)+1))
-        .then(()=>{fireLog(isCorrect?'success':'warn','REPONSE',`"${teamName}" — ${isCorrect?'✅ Correcte':'❌ Incorrecte'} en ${elapsed}s [${game.type}]`,{isCorrect,elapsed,gameType:game.type,level:SELECTED_SSIAP_LEVEL});showScreenSafe('trainee-waiting-others');})
+        .then(()=>{
+            // Log this answer for the end-of-game review screen.
+            try{traineeAnswerLog.push({game:JSON.parse(JSON.stringify(game)),given:answer,isCorrect,time:elapsed});}catch{}
+            fireLog(isCorrect?'success':'warn','REPONSE',`"${teamName}" — ${isCorrect?'✅ Correcte':'❌ Incorrecte'} en ${elapsed}s [${game.type}]`,{isCorrect,elapsed,gameType:game.type,level:SELECTED_SSIAP_LEVEL});
+            showScreenSafe('trainee-waiting-others');
+        })
         .catch(err=>{fireLog('error','REPONSE',`Échec envoi "${teamName}" : ${err.message||err}`,{teamId,gameType:game.type});btn.disabled=false;btn.textContent='✓ Valider ma réponse';btn.classList.remove('opacity-50','cursor-not-allowed');showCustomAlert('Erreur. Réessayez.');});
 }
 
