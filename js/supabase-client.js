@@ -194,6 +194,16 @@ export const admin = {
     const url = c().storage.from('question-media').getPublicUrl(path).data.publicUrl;
     return url;
   },
+
+  // Upload a team photo (used as avatar). Reuses the question-media bucket
+  // under a `team-photos/` prefix so we don't need a separate bucket.
+  async uploadTeamPhoto(file, teamId) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `team-photos/${teamId}-${Date.now()}.${ext}`;
+    const { error } = await c().storage.from('question-media').upload(path, file, { upsert: true });
+    if (error) throw error;
+    return c().storage.from('question-media').getPublicUrl(path).data.publicUrl;
+  },
 };
 
 // Reshape a Supabase question row (with joined sub-tables) into the legacy

@@ -153,6 +153,12 @@
         .buzzer-toast .bz-avatar{font-size:2rem;line-height:1}
         .buzzer-toast .bz-name{font-size:1.05rem}
         .buzzer-toast .bz-hint{font-size:.7rem;opacity:.85;font-weight:600}
+        /* Avatar display: photo or emoji */
+        .avatar-img{display:inline-block;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.2);background:#e5e7eb}
+        .avatar-img.av-sm{width:1.5em;height:1.5em;vertical-align:middle}
+        .avatar-img.av-md{width:3rem;height:3rem}
+        .avatar-img.av-lg{width:4rem;height:4rem}
+        #avatar-photo-preview img{width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid #3b82f6;box-shadow:0 4px 14px rgba(59,130,246,.35)}
     </style>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#3B82F6',secondary:'#6366F1'}}}}</script>
 </head>
@@ -294,7 +300,14 @@
             <input type="text" id="team-name-input" placeholder="Nom de votre équipe"
                 class="w-full px-4 py-4 rounded-xl border-2 border-gray-300 bg-white text-gray-800 mb-4 text-lg font-bold focus:border-primary focus:outline-none text-center" maxlength="20">
             <div class="text-xs font-bold text-gray-600 mb-2">Choisissez votre avatar</div>
-            <div id="avatar-picker" class="grid grid-cols-6 gap-2 mb-4"></div>
+            <div id="avatar-picker" class="grid grid-cols-6 gap-2 mb-3"></div>
+            <div class="text-xs font-bold text-gray-500 mb-2">— ou —</div>
+            <div class="mb-4 flex flex-col items-center gap-2">
+                <label for="avatar-photo-input" class="cursor-pointer ssiap-gradient text-white font-bold py-2 px-5 rounded-xl text-sm shadow inline-flex items-center gap-2">📷 Prendre / Choisir une photo</label>
+                <input type="file" id="avatar-photo-input" accept="image/*" capture="user" class="hidden">
+                <div id="avatar-photo-preview" class="hidden mt-1"></div>
+                <button type="button" id="avatar-photo-clear" class="hidden text-xs text-red-600 underline">retirer la photo</button>
+            </div>
             <button id="join-game-btn" class="w-full ssiap-gradient text-white text-xl font-bold py-4 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚀 Rejoindre</button>
         </div>
     </div>
@@ -588,6 +601,16 @@ let fillBlankAnswers=[],categoriesAnswers={},decisionPath=[],selectedCatItem=nul
 let lastTraineeGame=null,openedBoxes=[];
 const TRAINEE_AVATARS=['🛡️','🚒','👨‍🚒','👩‍🚒','🧯','🔥','⛑️','🦸','🦸‍♀️','🥷','👮','🚨'];
 let selectedAvatar='🛡️';
+let pendingAvatarFile=null; // photo picked but not yet uploaded
+
+// Renders an avatar value (emoji or http URL) as HTML.
+function renderAvatar(avatar,sizeClass='av-md'){
+    const v=avatar||'🛡️';
+    if(typeof v==='string'&&/^https?:\/\//.test(v)){
+        return `<img class="avatar-img ${sizeClass}" src="${v}" alt="avatar">`;
+    }
+    return `<span>${v}</span>`;
+}
 let answersListener=null,timerInterval=null,timeRemaining=30;
 let gameStatusListener=null,currentGameListener=null,questionStartTime=null;
 let editingBox=-1,editingGame=-1,adminCurrentBox=0,adminCurrentLevel=1;
@@ -970,7 +993,7 @@ function updateTeamsList(teams){
     if(!teams||!Object.keys(teams).length){list.innerHTML='<div class="text-center text-gray-500 col-span-3">En attente des équipes...</div>';count.textContent='0';return;}
     count.textContent=Object.keys(teams).length;
     Object.entries(teams).forEach(([id,t])=>{if(t?.online===false&&t?.name){const ls=t?.lastOfflineLog||0;if(Date.now()-ls>10000){fireLog('warn','DECONNEXION',`"${t.name}" hors-ligne`,{teamId:id,score:t?.score||0});database.ref('sessions/'+sessionId+'/teams/'+id+'/lastOfflineLog').set(Date.now());}}});
-    list.innerHTML=Object.entries(teams).map(([id,t])=>`<div class="bg-white p-4 rounded-lg shadow-lg text-center relative ${t?.online===false?'opacity-60':''}"><button onclick="removeTeam('${id}')" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full font-bold text-sm">✕</button><div class="text-4xl mb-2">${t?.avatar||getTeamEmoji(id)}</div><div class="text-lg font-bold text-gray-800">${t?.name||'?'}</div><div class="text-sm text-gray-600">Score : ${t?.score||0} pts</div>${t?.online===false?'<div class="text-xs text-orange-500 font-bold mt-1">⚠️ Déconnecté</div>':''}</div>`).join('');
+    list.innerHTML=Object.entries(teams).map(([id,t])=>`<div class="bg-white p-4 rounded-lg shadow-lg text-center relative ${t?.online===false?'opacity-60':''}"><button onclick="removeTeam('${id}')" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full font-bold text-sm">✕</button><div class="text-4xl mb-2 flex justify-center">${renderAvatar(t?.avatar||getTeamEmoji(id),'av-lg')}</div><div class="text-lg font-bold text-gray-800">${t?.name||'?'}</div><div class="text-sm text-gray-600">Score : ${t?.score||0} pts</div>${t?.online===false?'<div class="text-xs text-orange-500 font-bold mt-1">⚠️ Déconnecté</div>':''}</div>`).join('');
 }
 window.removeTeam=function(tId){showConfirmDialog('Supprimer cette équipe ?',()=>database.ref('sessions/'+sessionId+'/teams/'+tId).remove());};
 
@@ -1196,7 +1219,7 @@ function showBuzzerToast(team){
     if(!stack){stack=document.createElement('div');stack.id='buzzer-stack';document.body.appendChild(stack);}
     const toast=document.createElement('div');
     toast.className='buzzer-toast';
-    toast.innerHTML=`<span class="bz-avatar">${team.avatar||'🛡️'}</span><div><div class="bz-name">${team.name||'?'}</div><div class="bz-hint">a répondu !</div></div>`;
+    toast.innerHTML=`<span class="bz-avatar">${renderAvatar(team.avatar||'🛡️','av-md')}</span><div><div class="bz-name">${team.name||'?'}</div><div class="bz-hint">a répondu !</div></div>`;
     stack.appendChild(toast);
     setTimeout(()=>{toast.classList.add('leaving');setTimeout(()=>toast.remove(),400);},2400);
 }
@@ -1291,7 +1314,7 @@ function displayRanking(cId){
         const teams=snap.val();if(!teams)return;
         const arr=Object.entries(teams).map(([id,t])=>({id,name:t?.name||'?',score:t?.score||0,avatar:t?.avatar||getTeamEmoji(id)})).sort((a,b)=>b.score-a.score);
         const el=document.getElementById(cId);if(!el)return;
-        el.innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-4 ${i<3?'bg-gradient-to-r from-yellow-100 to-blue-100':'bg-gray-100'} rounded-lg mb-2"><div class="flex items-center gap-4"><div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div><div class="text-3xl">${t.avatar}</div><div class="text-xl font-bold">${t.name}</div></div><div class="text-2xl font-bold text-primary">${t.score} pts</div></div>`).join('');
+        el.innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-4 ${i<3?'bg-gradient-to-r from-yellow-100 to-blue-100':'bg-gray-100'} rounded-lg mb-2"><div class="flex items-center gap-4"><div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div><div class="text-3xl">${renderAvatar(t.avatar,'av-md')}</div><div class="text-xl font-bold">${t.name}</div></div><div class="text-2xl font-bold text-primary">${t.score} pts</div></div>`).join('');
     });
 }
 
@@ -1361,20 +1384,59 @@ function renderAvatarPicker(){
     el.innerHTML=TRAINEE_AVATARS.map(a=>`<button type="button" class="avatar-btn ${a===selectedAvatar?'selected':''}" data-avatar="${a}">${a}</button>`).join('');
     el.querySelectorAll('.avatar-btn').forEach(b=>b.addEventListener('click',()=>{
         selectedAvatar=b.getAttribute('data-avatar');
+        // Picking an emoji clears any pending photo
+        clearAvatarPhoto();
         el.querySelectorAll('.avatar-btn').forEach(x=>x.classList.toggle('selected',x===b));
     }));
+    // Photo picker wiring
+    const fileInput=document.getElementById('avatar-photo-input');
+    const preview=document.getElementById('avatar-photo-preview');
+    const clearBtn=document.getElementById('avatar-photo-clear');
+    if(fileInput&&!fileInput._wired){
+        fileInput._wired=true;
+        fileInput.addEventListener('change',()=>{
+            const f=fileInput.files?.[0];if(!f)return;
+            pendingAvatarFile=f;
+            const url=URL.createObjectURL(f);
+            preview.innerHTML=`<img src="${url}" alt="aperçu">`;
+            preview.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+            // De-select all emoji buttons since the photo wins
+            document.querySelectorAll('#avatar-picker .avatar-btn.selected').forEach(b=>b.classList.remove('selected'));
+        });
+        clearBtn.addEventListener('click',clearAvatarPhoto);
+    }
+}
+function clearAvatarPhoto(){
+    pendingAvatarFile=null;
+    const fi=document.getElementById('avatar-photo-input');if(fi)fi.value='';
+    const pv=document.getElementById('avatar-photo-preview');if(pv){pv.innerHTML='';pv.classList.add('hidden');}
+    const cb=document.getElementById('avatar-photo-clear');if(cb)cb.classList.add('hidden');
 }
 // Initial render so the picker is visible from the get-go
 document.addEventListener('DOMContentLoaded',renderAvatarPicker);
 if(document.readyState!=='loading')renderAvatarPicker();
 
-document.getElementById('join-game-btn').addEventListener('click',()=>{
+document.getElementById('join-game-btn').addEventListener('click',async ()=>{
     teamName=document.getElementById('team-name-input').value.trim();
     if(!teamName){showCustomAlert('Entrez un nom d\'équipe !');return;}
     if(!sessionId){showCustomAlert('Session introuvable. Scannez à nouveau le QR code.');return;}
     teamId='team_'+generateUUID();
+    // If a photo was picked, upload it first; otherwise keep the emoji.
+    let avatar=selectedAvatar;
+    if(pendingAvatarFile&&window.supa){
+        const btn=document.getElementById('join-game-btn');
+        const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ Envoi de la photo…';
+        try{
+            avatar=await window.supa.admin.uploadTeamPhoto(pendingAvatarFile,teamId);
+        }catch(e){
+            console.error('[avatar] upload failed',e);
+            showCustomAlert('❌ Échec upload photo, on garde l\'emoji.');
+        }finally{btn.disabled=false;btn.textContent=old;}
+    }
+    selectedAvatar=avatar;
     const ref=database.ref('sessions/'+sessionId+'/teams/'+teamId);
-    ref.set({name:teamName,avatar:selectedAvatar,score:0,hasAnswered:false,answerTime:0,totalCorrect:0,totalAnswered:0,online:true,joinedAt:Date.now()}).then(()=>{
+    ref.set({name:teamName,avatar,score:0,hasAnswered:false,answerTime:0,totalCorrect:0,totalAnswered:0,online:true,joinedAt:Date.now()}).then(()=>{
         ref.child('online').onDisconnect().set(false);
         const url=new URL(window.location.href);url.searchParams.set('session',sessionId);url.searchParams.set('team',teamId);window.history.replaceState({},'',url.toString());
         saveSessionToLocalStorage();document.body.classList.add('trainee-connected');
@@ -1400,7 +1462,7 @@ function listenForGameUpdatesTrainee(){
 /* ════ JEU STAGIAIRE ════ */
 function showTraineeGame(game){
     lastTraineeGame=game;showScreenSafe('trainee-game');
-    document.getElementById('trainee-team-display').textContent=(selectedAvatar||'🛡️')+' '+teamName;
+    document.getElementById('trainee-team-display').innerHTML=`<span class="inline-flex items-center gap-2">${renderAvatar(selectedAvatar||'🛡️','av-md')} ${teamName}</span>`;
     database.ref('sessions/'+sessionId+'/teams/'+teamId+'/score').on('value',s=>{document.getElementById('trainee-score-display').textContent=(s.val()||0)+' pts';});
     document.getElementById('trainee-game-container').innerHTML=renderGameForTrainee(game);
     selectedAnswer=null;selectedSequence=[];selectedMultiple=[];selectedRanking=[];fillBlankAnswers=[];categoriesAnswers={};decisionPath=[];selectedCatItem=null;matchingLeft=null;matchingRight=null;
