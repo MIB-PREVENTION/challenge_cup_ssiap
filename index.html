@@ -1588,13 +1588,82 @@ function buildEditForm(game){
     if(game.pairs)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Paires</label><div class="space-y-2">${game.pairs.map((pair,i)=>`<div class="flex items-center gap-2"><input type="text" id="pair-left-${i}" value="${pair.left}" class="flex-1 px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"><span class="text-blue-500 font-bold">→</span><input type="text" id="pair-right-${i}" value="${pair.right}" class="flex-1 px-3 py-2 border-2 border-cyan-300 rounded-lg text-sm"></div>`).join('')}</div></div>`;
     if(game.sentence!==undefined)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">Phrase (%1%, %2%…)</label><textarea id="edit-sentence" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="2">${game.sentence}</textarea></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Réponses (séparées par |)</label><input type="text" id="edit-blanks" value="${(game.correctBlanks||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Banque de mots (séparées par |)</label><input type="text" id="edit-wordbank" value="${(game.wordBank||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div>`;
     html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">💡 Explication</label><textarea id="edit-explanation" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.explanation||''}</textarea></div>`;
-    // Media upload (Phase 2 — admin)
-    html+=`<div class="border-t-2 border-gray-200 pt-3"><div class="text-xs font-bold text-gray-500 mb-2">📸 MÉDIAS (optionnel)</div>`;
-    if(game.imageUrl)html+=`<div class="mb-2 text-xs text-gray-600">Image actuelle : <a href="${game.imageUrl}" target="_blank" class="text-blue-600 underline break-all">${game.imageUrl.split('/').pop()}</a></div>`;
-    html+=`<div class="mb-3"><label class="block text-xs font-bold text-gray-700 mb-1">🖼️ Remplacer l'image (PNG/JPG/WebP)</label><input type="file" id="edit-image-file" accept="image/*" class="text-xs"></div>`;
-    if(game.videoUrl)html+=`<div class="mb-2 text-xs text-gray-600">Vidéo actuelle : <a href="${game.videoUrl}" target="_blank" class="text-blue-600 underline break-all">${game.videoUrl.split('/').pop()}</a></div>`;
-    html+=`<div><label class="block text-xs font-bold text-gray-700 mb-1">🎬 Remplacer la vidéo (MP4/WebM)</label><input type="file" id="edit-video-file" accept="video/*" class="text-xs"></div></div>`;
+    // ════ MÉDIAS (image / vidéo) ════
+    html+=buildMediaBlock('image',game.imageUrl);
+    html+=buildMediaBlock('video',game.videoUrl);
     html+=`</div>`;return html;
+}
+
+// Renders one media editor block (image or video).
+function buildMediaBlock(kind,currentUrl){
+    const isImg=kind==='image';
+    const icon=isImg?'🖼️':'🎬';
+    const title=isImg?'Image':'Vidéo';
+    const accept=isImg?'image/*':'video/*';
+    const preview=currentUrl
+        ? (isImg
+            ? `<img src="${currentUrl}" alt="aperçu" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-200 mx-auto">`
+            : `<video src="${currentUrl}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-200 mx-auto"></video>`)
+        : `<div class="text-gray-400 text-sm italic py-6">Aucun ${title.toLowerCase()}</div>`;
+    return `
+    <div class="media-block border-t-2 border-gray-200 pt-4 mt-2" data-kind="${kind}">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold text-gray-700">${icon} ${title}</span>
+        ${currentUrl?`<button type="button" onclick="mediaDelete('${kind}')" class="text-xs px-2 py-1 bg-red-500 text-white rounded font-bold">🗑️ Supprimer</button>`:''}
+      </div>
+      <input type="hidden" id="edit-${kind}-current" value="${currentUrl||''}">
+      <input type="hidden" id="edit-${kind}-action" value="keep">
+      <div id="edit-${kind}-preview" class="bg-gray-50 rounded-lg p-2 text-center mb-3">${preview}</div>
+      <div class="flex gap-1 mb-2 text-xs">
+        <button type="button" onclick="mediaTab('${kind}','upload')" id="tab-${kind}-upload" class="flex-1 px-3 py-2 bg-blue-500 text-white rounded-l-lg font-bold">💻 Depuis le PC</button>
+        <button type="button" onclick="mediaTab('${kind}','url')" id="tab-${kind}-url" class="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-r-lg font-bold">🌐 Lien web</button>
+      </div>
+      <div id="panel-${kind}-upload">
+        <input type="file" id="edit-${kind}-file" accept="${accept}" class="text-xs w-full" onchange="mediaFilePicked('${kind}')">
+        <p class="text-xs text-gray-500 mt-1">Le fichier sera uploadé sur Supabase à la sauvegarde.</p>
+      </div>
+      <div id="panel-${kind}-url" class="hidden">
+        <input type="url" id="edit-${kind}-url" placeholder="https://example.com/${kind==='image'?'photo.jpg':'video.mp4'}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" oninput="mediaUrlChanged('${kind}')">
+        <p class="text-xs text-gray-500 mt-1">Lien direct vers ${kind==='image'?'l\'image':'la vidéo'} (sera chargé tel quel pendant le jeu).</p>
+      </div>
+    </div>`;
+}
+
+window.mediaTab=function(kind,mode){
+    document.getElementById(`panel-${kind}-upload`).classList.toggle('hidden',mode!=='upload');
+    document.getElementById(`panel-${kind}-url`).classList.toggle('hidden',mode!=='url');
+    const upBtn=document.getElementById(`tab-${kind}-upload`);
+    const urlBtn=document.getElementById(`tab-${kind}-url`);
+    if(mode==='upload'){upBtn.className='flex-1 px-3 py-2 bg-blue-500 text-white rounded-l-lg font-bold';urlBtn.className='flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-r-lg font-bold';}
+    else{upBtn.className='flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-l-lg font-bold';urlBtn.className='flex-1 px-3 py-2 bg-blue-500 text-white rounded-r-lg font-bold';}
+};
+window.mediaFilePicked=function(kind){
+    const f=document.getElementById(`edit-${kind}-file`)?.files?.[0];if(!f)return;
+    document.getElementById(`edit-${kind}-action`).value='upload';
+    // Live preview from local file
+    const url=URL.createObjectURL(f);
+    const tag=kind==='image'?`<img src="${url}" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto">`:`<video src="${url}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto"></video>`;
+    document.getElementById(`edit-${kind}-preview`).innerHTML=tag+'<div class="text-xs text-blue-600 font-bold mt-1">📤 sera uploadé à la sauvegarde</div>';
+    // Clear URL field
+    const urlEl=document.getElementById(`edit-${kind}-url`);if(urlEl)urlEl.value='';
+};
+window.mediaUrlChanged=function(kind){
+    const v=document.getElementById(`edit-${kind}-url`)?.value?.trim()||'';
+    document.getElementById(`edit-${kind}-action`).value=v?'url':'keep';
+    if(v&&/^https?:\/\//.test(v)){
+        const tag=kind==='image'?`<img src="${v}" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto" onerror="this.outerHTML='<div class=\\'text-red-500 text-xs italic\\'>⚠️ URL invalide ou inaccessible</div>'">`:`<video src="${v}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto"></video>`;
+        document.getElementById(`edit-${kind}-preview`).innerHTML=tag+'<div class="text-xs text-blue-600 font-bold mt-1">🌐 lien externe</div>';
+    }
+    // Clear file picker
+    const fEl=document.getElementById(`edit-${kind}-file`);if(fEl)fEl.value='';
+};
+window.mediaDelete=function(kind){
+    if(!confirm(`Supprimer ${kind==='image'?'l\'image':'la vidéo'} actuelle ?`))return;
+    document.getElementById(`edit-${kind}-action`).value='delete';
+    document.getElementById(`edit-${kind}-preview`).innerHTML=`<div class="text-red-500 text-sm italic py-6">🗑️ Sera supprimé à la sauvegarde</div>`;
+    const fEl=document.getElementById(`edit-${kind}-file`);if(fEl)fEl.value='';
+    const uEl=document.getElementById(`edit-${kind}-url`);if(uEl)uEl.value='';
+};
 }
 // Map a legacy game object (camelCase, with sub-arrays) into the Supabase
 // payload shape (snake_case columns + sub-table arrays). Used by every
@@ -1640,20 +1709,25 @@ window.saveQuestionEdit=async function(){
     if(game.sentence!==undefined){const sE=document.getElementById('edit-sentence'),bE=document.getElementById('edit-blanks'),wE=document.getElementById('edit-wordbank');if(sE)game.sentence=sE.value;if(bE)game.correctBlanks=bE.value.split('|').map(s=>s.trim());if(wE)game.wordBank=wE.value.split('|').map(s=>s.trim());}
     const expEl=document.getElementById('edit-explanation');if(expEl)game.explanation=expEl.value;
 
-    // Image upload (if a file was picked)
-    const imgInput=document.getElementById('edit-image-file');
-    if(imgInput?.files?.[0]&&window.supa){
-        try{
-            const url=await window.supa.admin.uploadMedia(imgInput.files[0],game.id,'image');
-            game.imageUrl=url;
-        }catch(e){console.error('[admin] upload image',e);showCustomAlert('❌ Échec upload image');}
-    }
-    const vidInput=document.getElementById('edit-video-file');
-    if(vidInput?.files?.[0]&&window.supa){
-        try{
-            const url=await window.supa.admin.uploadMedia(vidInput.files[0],game.id,'video');
-            game.videoUrl=url;
-        }catch(e){console.error('[admin] upload video',e);showCustomAlert('❌ Échec upload vidéo');}
+    // Apply media changes (upload / external URL / delete) for image and video.
+    for(const kind of ['image','video']){
+        const action=document.getElementById(`edit-${kind}-action`)?.value||'keep';
+        const field=kind==='image'?'imageUrl':'videoUrl';
+        if(action==='delete'){
+            game[field]=null;
+        }else if(action==='url'){
+            const u=document.getElementById(`edit-${kind}-url`)?.value?.trim();
+            if(u)game[field]=u;
+        }else if(action==='upload'){
+            const f=document.getElementById(`edit-${kind}-file`)?.files?.[0];
+            if(f&&window.supa){
+                try{
+                    const url=await window.supa.admin.uploadMedia(f,game.id,kind);
+                    game[field]=url;
+                }catch(e){console.error(`[admin] upload ${kind}`,e);showCustomAlert(`❌ Échec upload ${kind}`);}
+            }
+        }
+        // 'keep' → no change
     }
 
     // Persist to Supabase
