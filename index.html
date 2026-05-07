@@ -229,6 +229,18 @@
                         <input type="number" id="cfg-qpb" min="1" max="50" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" value="8">
                     </div>
                 </div>
+                <!-- Mode libre -->
+                <div class="border-t-2 border-gray-200 pt-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="cfg-libre-toggle" class="w-5 h-5">
+                        <span class="font-bold text-gray-800">🎲 Mode libre</span>
+                        <span class="text-xs text-gray-500">— tirage aléatoire à travers les modules cochés (l'écran modules est sauté)</span>
+                    </label>
+                    <div id="cfg-libre-row" class="hidden mt-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Nombre total de questions</label>
+                        <input type="number" id="cfg-libre-count" min="1" max="200" class="w-full md:w-40 px-3 py-2 border-2 border-purple-300 rounded-lg text-sm" value="20">
+                    </div>
+                </div>
                 <div class="flex justify-end gap-2">
                     <button onclick="resetSessionConfig()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm">🔄 Réinitialiser tout</button>
                 </div>
@@ -675,8 +687,8 @@ const ALL_GAME_TYPES=Object.keys(GAME_TYPE_LABELS);
 let sessionConfig=loadSessionConfigFromLocal();
 
 function loadSessionConfigFromLocal(){
-    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null};}
-    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null};}
+    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null,libreMode:false,libreCount:20};}
+    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null,libreMode:false,libreCount:20};}
 }
 function saveSessionConfigToLocal(){localStorage.setItem('ssiapSessionConfig',JSON.stringify(sessionConfig));}
 
@@ -713,6 +725,31 @@ function renderSessionConfigUI(){
 
     document.getElementById('cfg-difficulty').value=sessionConfig.diffFilter??'';
     document.getElementById('cfg-qpb').value=sessionConfig.qpb??QUESTIONS_PER_BOX;
+
+    // Libre mode
+    const libreToggle=document.getElementById('cfg-libre-toggle');
+    const libreRow=document.getElementById('cfg-libre-row');
+    const libreCount=document.getElementById('cfg-libre-count');
+    if(libreToggle){
+        libreToggle.checked=!!sessionConfig.libreMode;
+        libreRow.classList.toggle('hidden',!sessionConfig.libreMode);
+        libreCount.value=sessionConfig.libreCount??20;
+        libreToggle.onchange=()=>{
+            sessionConfig.libreMode=libreToggle.checked;
+            saveSessionConfigToLocal();renderSessionConfigUI();updateStartButtonLabel();
+        };
+        libreCount.onchange=()=>{
+            sessionConfig.libreCount=Math.max(1,parseInt(libreCount.value)||20);
+            saveSessionConfigToLocal();
+        };
+    }
+    updateStartButtonLabel();
+}
+
+function updateStartButtonLabel(){
+    const btn=document.getElementById('start-game-btn');
+    if(!btn)return;
+    btn.textContent=sessionConfig.libreMode?'🎲 Lancer le Mode Libre':'🚀 Lancer le Jeu';
 }
 
 function onCfgChange(){
@@ -863,6 +900,7 @@ function initializeSupervisor(){
     new QRCode(qrEl,{text:window.location.href.split('?')[0]+'?session='+sessionId,width:220,height:220,colorDark:'#3B82F6',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
     database.ref('sessions/'+sessionId).set({status:'waiting',currentBox:-1,currentGameIndex:-1,teams:{},openedBoxes:[],ssiapLevel:SELECTED_SSIAP_LEVEL,createdAt:Date.now()});
     database.ref('sessions/'+sessionId+'/teams').on('value',snap=>updateTeamsList(snap.val()));
+    if(typeof updateStartButtonLabel==='function')updateStartButtonLabel();
     fireLog('info','SESSION',`Session SSIAP créée — ${LEVEL_SHORT[SELECTED_SSIAP_LEVEL]}`,{sessionId,level:SELECTED_SSIAP_LEVEL});
 }
 function updateTeamsList(teams){
@@ -888,6 +926,8 @@ document.getElementById('start-game-btn').addEventListener('click',async()=>{
                         activeModules:sessionConfig.activeModules,
                         qtypeFilters:sessionConfig.qtypeFilters,
                         diffFilter:sessionConfig.diffFilter,
+                        libreMode:sessionConfig.libreMode,
+                        libreCount:sessionConfig.libreCount,
                     },
                 });
             }
@@ -895,7 +935,12 @@ document.getElementById('start-game-btn').addEventListener('click',async()=>{
     }
     database.ref('sessions/'+sessionId+'/status').set('playing');
     database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);
-    showBoxesScreen();
+    if(sessionConfig.libreMode){
+        // Skip the boxes screen entirely
+        launchLibreMode();
+    }else{
+        showBoxesScreen();
+    }
 });
 function showBoxesScreen(){
     showScreenSafe('boxes-screen');
@@ -1009,6 +1054,26 @@ window.openBox=function(boxIndex){
     loadGame();
 };
 
+// Mode libre — random pool drawn across all enabled modules, no boxes screen.
+function launchLibreMode(){
+    const enabledModules=BOXES_DATA.filter(m=>moduleEnabled(m.id));
+    const pool=[];
+    for(const m of enabledModules){
+        for(const g of (m.games||[])){
+            if(questionMatchesFilters(g))pool.push(g);
+        }
+    }
+    if(!pool.length){showCustomAlert('❌ Aucune question disponible avec ces filtres.');return;}
+    const count=Math.min(sessionConfig.libreCount||20,pool.length);
+    const games=shuffle(pool).slice(0,count);
+    currentBox=-1;currentGameIndex=0;
+    const typesMap={};games.forEach(g=>{typesMap[g.type]=(typesMap[g.type]||0)+1;});
+    const typesStr=Object.entries(typesMap).map(([t,n])=>`${n}×${getGameIcon(t)}`).join(' ');
+    fireLog('info','LIBRE',`Mode libre : ${games.length}q sur ${pool.length} disponibles — Types: ${typesStr}`,{count:games.length,level:SELECTED_SSIAP_LEVEL});
+    database.ref('sessions/'+sessionId).update({currentBox:-1,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
+    loadGame();
+}
+
 /* ════ CHARGEMENT QUESTION ════ */
 function loadGame(){
     database.ref('sessions/'+sessionId+'/randomizedGames').once('value',snap=>{
@@ -1109,11 +1174,16 @@ document.getElementById('next-question-btn').addEventListener('click',()=>{
     database.ref('sessions/'+sessionId+'/randomizedGames').once('value',snap=>{
         const games=snap.val();if(!games)return;
         if(currentGameIndex>=games.length){
-            if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);
-            database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);
-            // Are there still enabled modules not yet opened?
-            const remaining=BOXES_DATA.some((b,i)=>i!==currentBox&&!openedBoxes.includes(i)&&moduleEnabled(b.id));
-            remaining?showPauseScreen():showPodiumSupervisor();
+            if(currentBox===-1){
+                // Mode libre: pas de notion de module, on va direct au podium.
+                showPodiumSupervisor();
+            }else{
+                if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);
+                database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);
+                // Are there still enabled modules not yet opened?
+                const remaining=BOXES_DATA.some((b,i)=>i!==currentBox&&!openedBoxes.includes(i)&&moduleEnabled(b.id));
+                remaining?showPauseScreen():showPodiumSupervisor();
+            }
         }
         else loadGame();
     });
