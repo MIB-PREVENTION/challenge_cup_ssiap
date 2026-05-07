@@ -174,11 +174,28 @@ function parsePath(path) {
 
 // ---------- Realtime listener registry -----------------------------
 
-const channels = new Map(); // path -> { channel, callbacks: Set }
+// Each path tracks the last broadcast value so we can suppress callbacks
+// fired by unrelated changes on the same row (e.g. answers_count bumping
+// shouldn't re-trigger a gameStatus listener and re-show the question).
+const channels = new Map(); // path -> { channel, callbacks: Set, lastValue }
+
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return a === b;
+  if (typeof a !== typeof b) return false;
+  if (typeof a !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (!deepEqual(a[k], b[k])) return false;
+  return true;
+}
 
 function broadcast(path, val, exists) {
   const reg = channels.get(path);
   if (!reg) return;
+  if ('lastValue' in reg && deepEqual(reg.lastValue, val)) return;
+  reg.lastValue = val;
   for (const cb of reg.callbacks) {
     try { cb(makeSnapshot(val, exists)); } catch (e) { console.error('[shim] cb error', e); }
   }
@@ -206,8 +223,9 @@ async function subscribe(path, callback) {
   reg.callbacks.add(callback);
   channels.set(path, reg);
 
-  // Initial value via once()
+  // Initial value via once() — establishes the baseline for change detection.
   const initial = await readPath(path);
+  reg.lastValue = initial.value;
   callback(makeSnapshot(initial.value, initial.exists));
 
   if (reg.channel) return reg;
