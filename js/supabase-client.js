@@ -206,11 +206,11 @@ export function reshapeQuestion(q) {
   const cItems= sortBy(q.question_category_items, 'item_index'  ).map(i => ({ text: i.item_text, category: i.correct_category }));
   const steps = sortBy(q.question_decision_steps, 'step_index'  ).map(s => ({ question: s.step_question, options: s.options }));
 
-  const out = {
-    id:             q.id,
-    type:           q.type,
+  // Only include fields that have a value, so the legacy admin form's
+  // `if (game.sentence !== undefined)` checks behave correctly.
+  const out = { id: q.id, type: q.type, question: q.question };
+  const optional = {
     title:          q.title,
-    question:       q.question,
     scenario:       q.scenario,
     situation:      q.situation,
     explanation:    q.explanation,
@@ -226,6 +226,7 @@ export function reshapeQuestion(q) {
     imageKey:       q.image_key,
     imageDesc:      q.image_desc,
   };
+  for (const [k, v] of Object.entries(optional)) if (v != null) out[k] = v;
   if (opts.length)   out.options    = opts;
   if (items.length)  out.items      = items;
   if (pairs.length)  out.pairs      = pairs;
