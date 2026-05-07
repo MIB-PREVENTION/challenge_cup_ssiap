@@ -138,6 +138,8 @@
         .carousel-dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:none;cursor:pointer;transition:all .25s;padding:0}
         .carousel-dot:hover{background:#94a3b8;transform:scale(1.2)}
         .carousel-dot.active{background:linear-gradient(135deg,#3b82f6,#6366f1);width:32px;border-radius:6px}
+        .carousel-dot.done{background:#10b981;opacity:.7}
+        .carousel-dot.inactive{background:#e5e7eb;opacity:.5}
     </style>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#3B82F6',secondary:'#6366F1'}}}}</script>
 </head>
@@ -901,29 +903,50 @@ function showBoxesScreen(){
     database.ref('sessions/'+sessionId+'/openedBoxes').once('value',snap=>{openedBoxes=snap.val()||[];renderBoxes();});
 }
 let currentBoxesIndex=0;
+// Display order for the carousel: active modules first, then completed,
+// then disabled. Each entry references the ORIGINAL BOXES_DATA index so
+// game routing (openBox, openedBoxes, currentBox) is unaffected.
+let boxesDisplayOrder=[];
+
+function computeBoxesDisplayOrder(){
+    const ranked=BOXES_DATA.map((box,idx)=>{
+        const done=openedBoxes.includes(idx);
+        const enabled=moduleEnabled(box.id);
+        const rank=done?1:(enabled?0:2); // 0=active, 1=done, 2=disabled
+        return {idx,rank};
+    });
+    // Stable sort by rank
+    ranked.sort((a,b)=>a.rank-b.rank);
+    return ranked.map(r=>r.idx);
+}
+
 function renderBoxes(){
     const container=document.getElementById('boxes-container');
     if(!BOXES_DATA.length){container.innerHTML='';return;}
-    if(currentBoxesIndex>=BOXES_DATA.length)currentBoxesIndex=0;
-    container.innerHTML=BOXES_DATA.map((box,idx)=>{
-        const done=openedBoxes.includes(idx);
+    boxesDisplayOrder=computeBoxesDisplayOrder();
+    // Snap to the first active (not done, enabled) module on every render so
+    // the supervisor always lands on something playable.
+    const firstActive=boxesDisplayOrder.findIndex(i=>!openedBoxes.includes(i)&&moduleEnabled(BOXES_DATA[i].id));
+    currentBoxesIndex=firstActive>=0?firstActive:0;
+    container.innerHTML=boxesDisplayOrder.map(originalIdx=>{
+        const box=BOXES_DATA[originalIdx];
+        const done=openedBoxes.includes(originalIdx);
         const enabled=moduleEnabled(box.id);
         const filtered=(box.games||[]).filter(questionMatchesFilters);
         const pool=filtered.length?filtered:(box.games||[]);
         const nb=Math.min(QUESTIONS_PER_BOX,pool.length);
         const disabled=done||!enabled;
-        const click=disabled?'':`openBox(${idx})`;
         const subtitle=enabled?(box.subtitle||''):'(Module désactivé en config session)';
         const footer=done?'✅ Terminé':(enabled?(nb+' questions — types variés'):'⏭️ Désactivé');
-        return`<div class="carousel-card glass-morphism rounded-3xl shadow-2xl p-8 text-center ${disabled?'box-disabled':''}" data-box-idx="${idx}" data-disabled="${disabled?'1':'0'}"><div class="text-8xl mb-4 ${disabled?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${subtitle}</p><p class="text-xs text-gray-400 mb-3">${pool.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${footer}</div></div>`;
+        return`<div class="carousel-card glass-morphism rounded-3xl shadow-2xl p-8 text-center ${disabled?'box-disabled':''}" data-box-idx="${originalIdx}" data-disabled="${disabled?'1':'0'}"><div class="text-8xl mb-4 ${disabled?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${subtitle}</p><p class="text-xs text-gray-400 mb-3">${pool.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${footer}</div></div>`;
     }).join('');
     container.querySelectorAll('.carousel-card').forEach(card=>{
         card.addEventListener('click',()=>{
-            const idx=parseInt(card.getAttribute('data-box-idx'));
+            const originalIdx=parseInt(card.getAttribute('data-box-idx'));
             const disabled=card.getAttribute('data-disabled')==='1';
-            // Click on a side card brings it to center; click on center card opens it.
-            if(idx!==currentBoxesIndex){boxesCarouselGoto(idx);return;}
-            if(!disabled)openBox(idx);
+            const displayPos=boxesDisplayOrder.indexOf(originalIdx);
+            if(displayPos!==currentBoxesIndex){currentBoxesIndex=displayPos;layoutBoxesCarousel();renderBoxesDots();return;}
+            if(!disabled)openBox(originalIdx);
         });
     });
     layoutBoxesCarousel();
@@ -950,16 +973,21 @@ function layoutBoxesCarousel(){
 
 function renderBoxesDots(){
     const dots=document.getElementById('boxes-dots');if(!dots)return;
-    dots.innerHTML=BOXES_DATA.map((_,i)=>`<button class="carousel-dot${i===currentBoxesIndex?' active':''}" onclick="boxesCarouselGoto(${i})" aria-label="Module ${i+1}"></button>`).join('');
+    dots.innerHTML=boxesDisplayOrder.map((origIdx,i)=>{
+        const done=openedBoxes.includes(origIdx);
+        const enabled=moduleEnabled(BOXES_DATA[origIdx].id);
+        const cls=i===currentBoxesIndex?'active':(done?'done':(enabled?'':'inactive'));
+        return `<button class="carousel-dot ${cls}" onclick="boxesCarouselGoto(${i})" aria-label="Module ${i+1}"></button>`;
+    }).join('');
 }
 
 window.boxesCarouselNav=function(dir){
-    if(!BOXES_DATA.length)return;
-    currentBoxesIndex=(currentBoxesIndex+dir+BOXES_DATA.length)%BOXES_DATA.length;
+    if(!boxesDisplayOrder.length)return;
+    currentBoxesIndex=(currentBoxesIndex+dir+boxesDisplayOrder.length)%boxesDisplayOrder.length;
     layoutBoxesCarousel();renderBoxesDots();
 };
-window.boxesCarouselGoto=function(idx){
-    currentBoxesIndex=Math.max(0,Math.min(idx,BOXES_DATA.length-1));
+window.boxesCarouselGoto=function(displayPos){
+    currentBoxesIndex=Math.max(0,Math.min(displayPos,boxesDisplayOrder.length-1));
     layoutBoxesCarousel();renderBoxesDots();
 };
 // Keyboard navigation when the boxes screen is visible
