@@ -116,6 +116,86 @@ function sortBy(arr, key) {
   return [...(arr ?? [])].sort((a, b) => a[key] - b[key]);
 }
 
+// ---------------------------------------------------------------------
+// ADMIN — write helpers for the question catalogue
+// ---------------------------------------------------------------------
+
+export const admin = {
+  // Modules
+  async listModules(level) {
+    return ok(
+      c().from('modules').select('*')
+        .eq('level', level)
+        .order('display_order', { ascending: true }),
+      'admin.listModules',
+    );
+  },
+  async upsertModule(m) {
+    return ok(c().from('modules').upsert(m).select().single(), 'admin.upsertModule');
+  },
+  async deleteModule(id) {
+    return ok(c().from('modules').delete().eq('id', id), 'admin.deleteModule');
+  },
+  async toggleModuleActive(id, is_active) {
+    return ok(c().from('modules').update({ is_active }).eq('id', id), 'admin.toggleModuleActive');
+  },
+
+  // Questions
+  async createQuestion(payload) {
+    const { options, items, pairs, categories, category_items, decision_steps, ...row } = payload;
+    const created = await ok(
+      c().from('questions').insert(row).select().single(),
+      'admin.createQuestion',
+    );
+    await this.replaceSubtables(created.id, payload);
+    return created;
+  },
+
+  async updateQuestion(id, patch) {
+    const { options, items, pairs, categories, category_items, decision_steps, ...row } = patch;
+    if (Object.keys(row).length) {
+      await ok(c().from('questions').update(row).eq('id', id), 'admin.updateQuestion');
+    }
+    if (options || items || pairs || categories || category_items || decision_steps) {
+      await this.replaceSubtables(id, patch);
+    }
+  },
+
+  async deleteQuestion(id) {
+    return ok(c().from('questions').delete().eq('id', id), 'admin.deleteQuestion');
+  },
+
+  // Replace all sub-tables for a question (delete + bulk insert).
+  async replaceSubtables(questionId, payload) {
+    const tables = [
+      ['question_options',        payload.options,        (o, i) => ({ option_index: i, option_text: o })],
+      ['question_items',          payload.items,          (it, i) => ({ item_index: i, item_text: it })],
+      ['question_pairs',          payload.pairs,          (p, i) => ({ pair_index: i, left_text: p.left ?? p.from ?? p[0], right_text: p.right ?? p.to ?? p[1] })],
+      ['question_categories',     payload.categories,     (cat, i) => ({ category_index: i, category_id: cat.id ?? `cat-${i}`, category_label: cat.label ?? String(cat) })],
+      ['question_category_items', payload.category_items, (it, i) => ({ item_index: i, item_text: it.text ?? String(it), correct_category: it.category })],
+      ['question_decision_steps', payload.decision_steps, (s, i) => ({ step_index: i, step_question: s.question ?? '', options: s.options ?? [] })],
+    ];
+    for (const [table, list, build] of tables) {
+      if (!Array.isArray(list)) continue;
+      await ok(c().from(table).delete().eq('question_id', questionId), `admin.delete ${table}`);
+      if (list.length) {
+        const rows = list.map((it, i) => ({ question_id: questionId, ...build(it, i) }));
+        await ok(c().from(table).insert(rows), `admin.insert ${table}`);
+      }
+    }
+  },
+
+  // Storage helpers for media uploads (image / video on questions).
+  async uploadMedia(file, questionId, kind /* 'image' | 'video' */) {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `${questionId}/${kind}-${Date.now()}.${ext}`;
+    const { error } = await c().storage.from('question-media').upload(path, file, { upsert: true });
+    if (error) throw error;
+    const url = c().storage.from('question-media').getPublicUrl(path).data.publicUrl;
+    return url;
+  },
+};
+
 // Reshape a Supabase question row (with joined sub-tables) into the legacy
 // shape expected by the renderer (BOXES_LEVEL_X structure).
 export function reshapeQuestion(q) {
@@ -343,5 +423,5 @@ export const media = {
 // AGGREGATE EXPORT
 // ---------------------------------------------------------------------
 
-export const supa = { auth, catalogue, sessions, teams, answers, logs, media };
+export const supa = { auth, catalogue, sessions, teams, answers, logs, media, admin };
 export default supa;

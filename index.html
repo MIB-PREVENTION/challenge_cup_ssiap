@@ -1035,7 +1035,18 @@ function renderAdminQuestions(boxIdx){
 }
 function renderQuestionPreview(g){let html=`<div class="text-sm text-gray-700 font-bold mb-3">${g.question}</div>`;if(g.scenario)html+=`<div class="bg-blue-50 p-3 rounded-lg mb-3 text-sm text-gray-600"><b>📋</b> ${g.scenario}</div>`;if(g.imageKey&&PICTOGRAMS[g.imageKey])html+=`<div style="width:50px;height:50px;border-radius:8px;overflow:hidden;margin-bottom:8px">${PICTOGRAMS[g.imageKey]}</div>`;if(g.options)html+=`<div class="space-y-1 mb-3">${g.options.map((o,i)=>`<div class="text-sm p-2 rounded-lg flex gap-2 ${(Array.isArray(g.correctAnswers)?g.correctAnswers.includes(i):g.correctAnswer===i)?'bg-green-50 text-green-800 font-bold':'bg-gray-50 text-gray-600'}"><span>${(Array.isArray(g.correctAnswers)?g.correctAnswers.includes(i):g.correctAnswer===i)?'✅':'○'}</span>${String.fromCharCode(65+i)}. ${o}</div>`).join('')}</div>`;if(g.items)html+=`<div class="space-y-1 mb-3">${g.items.map((item,i)=>`<div class="text-sm p-2 bg-yellow-50 text-yellow-800 rounded-lg">${i+1}. ${item}</div>`).join('')}</div>`;if(g.pairs)html+=`<div class="space-y-1 mb-3">${g.pairs.map(p=>`<div class="text-sm p-2 bg-purple-50 text-purple-800 rounded-lg">${p.left} → ${p.right}</div>`).join('')}</div>`;if(g.sentence)html+=`<div class="text-sm p-2 bg-rose-50 text-rose-800 rounded-lg mb-2 font-mono">${g.sentence}</div>`;if(g.explanation)html+=`<div class="text-sm p-3 bg-blue-50 text-blue-800 rounded-lg"><b>💡</b> ${g.explanation}</div>`;return html;}
 window.toggleEditor=function(bIdx,gIdx){document.getElementById(`qbody-${bIdx}-${gIdx}`)?.classList.toggle('open');};
-window.deleteQuestion=function(bIdx,gIdx){showConfirmDialog('Supprimer cette question ?',()=>{BOXES_DATA[bIdx].games.splice(gIdx,1);renderAdminQuestions(bIdx);showCustomAlert('✅ Supprimée !');});};
+window.deleteQuestion=function(bIdx,gIdx){
+    const game=BOXES_DATA[bIdx].games[gIdx];
+    showConfirmDialog('Supprimer cette question ?',async ()=>{
+        if(window.supa&&game?.id){
+            try{await window.supa.admin.deleteQuestion(game.id);}
+            catch(e){console.error('[admin] delete',e);showCustomAlert('❌ Échec suppression : '+(e.message||e));return;}
+        }
+        BOXES_DATA[bIdx].games.splice(gIdx,1);
+        renderAdminQuestions(bIdx);
+        showCustomAlert('✅ Question supprimée');
+    });
+};
 window.openEditModal=function(bIdx,gIdx){editingBox=bIdx;editingGame=gIdx;const game=BOXES_DATA[bIdx].games[gIdx];document.getElementById('modal-edit-content').innerHTML=buildEditForm(game);document.getElementById('question-edit-modal').classList.remove('hidden');};
 window.closeEditModal=function(){document.getElementById('question-edit-modal').classList.add('hidden');editingBox=-1;editingGame=-1;};
 function buildEditForm(game){
@@ -1046,9 +1057,50 @@ function buildEditForm(game){
     if(game.items)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Items</label><div class="space-y-2">${game.items.map((item,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 ssiap-gradient text-white rounded-full flex items-center justify-center text-xs font-bold">${i+1}</span><input type="text" id="item-${i}" value="${item}" class="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div>`).join('')}</div></div>`;
     if(game.pairs)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Paires</label><div class="space-y-2">${game.pairs.map((pair,i)=>`<div class="flex items-center gap-2"><input type="text" id="pair-left-${i}" value="${pair.left}" class="flex-1 px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"><span class="text-blue-500 font-bold">→</span><input type="text" id="pair-right-${i}" value="${pair.right}" class="flex-1 px-3 py-2 border-2 border-cyan-300 rounded-lg text-sm"></div>`).join('')}</div></div>`;
     if(game.sentence!==undefined)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">Phrase (%1%, %2%…)</label><textarea id="edit-sentence" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="2">${game.sentence}</textarea></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Réponses (séparées par |)</label><input type="text" id="edit-blanks" value="${(game.correctBlanks||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Banque de mots (séparées par |)</label><input type="text" id="edit-wordbank" value="${(game.wordBank||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div>`;
-    html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">💡 Explication</label><textarea id="edit-explanation" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.explanation||''}</textarea></div></div>`;return html;
+    html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">💡 Explication</label><textarea id="edit-explanation" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.explanation||''}</textarea></div>`;
+    // Media upload (Phase 2 — admin)
+    html+=`<div class="border-t-2 border-gray-200 pt-3"><div class="text-xs font-bold text-gray-500 mb-2">📸 MÉDIAS (optionnel)</div>`;
+    if(game.imageUrl)html+=`<div class="mb-2 text-xs text-gray-600">Image actuelle : <a href="${game.imageUrl}" target="_blank" class="text-blue-600 underline break-all">${game.imageUrl.split('/').pop()}</a></div>`;
+    html+=`<div class="mb-3"><label class="block text-xs font-bold text-gray-700 mb-1">🖼️ Remplacer l'image (PNG/JPG/WebP)</label><input type="file" id="edit-image-file" accept="image/*" class="text-xs"></div>`;
+    if(game.videoUrl)html+=`<div class="mb-2 text-xs text-gray-600">Vidéo actuelle : <a href="${game.videoUrl}" target="_blank" class="text-blue-600 underline break-all">${game.videoUrl.split('/').pop()}</a></div>`;
+    html+=`<div><label class="block text-xs font-bold text-gray-700 mb-1">🎬 Remplacer la vidéo (MP4/WebM)</label><input type="file" id="edit-video-file" accept="video/*" class="text-xs"></div></div>`;
+    html+=`</div>`;return html;
 }
-window.saveQuestionEdit=function(){
+// Map a legacy game object (camelCase, with sub-arrays) into the Supabase
+// payload shape (snake_case columns + sub-table arrays). Used by every
+// admin mutation below.
+function gameToDbPayload(game, moduleId, displayOrder) {
+    return {
+        id:              game.id,
+        module_id:       moduleId,
+        type:            game.type,
+        title:           game.title ?? null,
+        question:        game.question,
+        scenario:        game.scenario ?? null,
+        situation:       game.situation ?? null,
+        explanation:     game.explanation ?? null,
+        correct_answer:  game.correctAnswer ?? null,
+        correct_answers: game.correctAnswers ?? null,
+        correct_order:   game.correctOrder ?? null,
+        correct_blanks:  game.correctBlanks ?? null,
+        correct_path:    game.correctPath ?? null,
+        word_bank:       game.wordBank ?? null,
+        sentence:        game.sentence ?? null,
+        image_url:       game.imageUrl ?? null,
+        video_url:       game.videoUrl ?? null,
+        image_key:       game.imageKey ?? null,
+        image_desc:      game.imageDesc ?? null,
+        display_order:   displayOrder ?? 0,
+        options:         game.options,
+        items:           game.type === 'categories' ? null : game.items,
+        pairs:           game.pairs,
+        categories:      game.categories,
+        category_items:  game.type === 'categories' ? game.items : null,
+        decision_steps:  game.steps,
+    };
+}
+
+window.saveQuestionEdit=async function(){
     if(editingBox===-1)return;const game=BOXES_DATA[editingBox].games[editingGame];
     const qEl=document.getElementById('edit-question');if(qEl)game.question=qEl.value;
     const sEl=document.getElementById('edit-scenario');if(sEl)game.scenario=sEl.value;
@@ -1057,9 +1109,56 @@ window.saveQuestionEdit=function(){
     if(game.pairs)game.pairs.forEach((_,i)=>{const l=document.getElementById('pair-left-'+i),r=document.getElementById('pair-right-'+i);if(l)game.pairs[i].left=l.value;if(r)game.pairs[i].right=r.value;});
     if(game.sentence!==undefined){const sE=document.getElementById('edit-sentence'),bE=document.getElementById('edit-blanks'),wE=document.getElementById('edit-wordbank');if(sE)game.sentence=sE.value;if(bE)game.correctBlanks=bE.value.split('|').map(s=>s.trim());if(wE)game.wordBank=wE.value.split('|').map(s=>s.trim());}
     const expEl=document.getElementById('edit-explanation');if(expEl)game.explanation=expEl.value;
-    closeEditModal();renderAdminQuestions(editingBox);showCustomAlert('✅ Question modifiée !');
+
+    // Image upload (if a file was picked)
+    const imgInput=document.getElementById('edit-image-file');
+    if(imgInput?.files?.[0]&&window.supa){
+        try{
+            const url=await window.supa.admin.uploadMedia(imgInput.files[0],game.id,'image');
+            game.imageUrl=url;
+        }catch(e){console.error('[admin] upload image',e);showCustomAlert('❌ Échec upload image');}
+    }
+    const vidInput=document.getElementById('edit-video-file');
+    if(vidInput?.files?.[0]&&window.supa){
+        try{
+            const url=await window.supa.admin.uploadMedia(vidInput.files[0],game.id,'video');
+            game.videoUrl=url;
+        }catch(e){console.error('[admin] upload video',e);showCustomAlert('❌ Échec upload vidéo');}
+    }
+
+    // Persist to Supabase
+    if(window.supa&&game.id){
+        try{
+            const moduleId=BOXES_DATA[editingBox].id;
+            const idx=BOXES_DATA[editingBox].games.indexOf(game);
+            const payload=gameToDbPayload(game,moduleId,idx);
+            const {id,module_id,type,...patch}=payload;
+            await window.supa.admin.updateQuestion(game.id,patch);
+        }catch(e){
+            console.error('[admin] save question',e);
+            showCustomAlert('❌ Échec sauvegarde : '+(e.message||e));
+            return;
+        }
+    }
+    closeEditModal();renderAdminQuestions(editingBox);showCustomAlert('✅ Question sauvegardée');
 };
-window.addNewQuestion=function(boxIdx){const nQ={type:'quiz',question:'Nouvelle question ?',options:['Option A','Option B','Option C','Option D'],correctAnswer:0,explanation:'Explication à compléter.'};BOXES_DATA[boxIdx].games.push(nQ);renderAdminQuestions(boxIdx);setTimeout(()=>openEditModal(boxIdx,BOXES_DATA[boxIdx].games.length-1),100);};
+
+window.addNewQuestion=async function(boxIdx){
+    const moduleId=BOXES_DATA[boxIdx].id;
+    const newId=`${moduleId}-q${Date.now()}`;
+    const nQ={id:newId,type:'quiz',question:'Nouvelle question ?',options:['Option A','Option B','Option C','Option D'],correctAnswer:0,explanation:'Explication à compléter.'};
+    if(window.supa){
+        try{
+            await window.supa.admin.createQuestion(gameToDbPayload(nQ,moduleId,BOXES_DATA[boxIdx].games.length));
+        }catch(e){
+            console.error('[admin] create question',e);
+            showCustomAlert('❌ Échec création : '+(e.message||e));
+            return;
+        }
+    }
+    BOXES_DATA[boxIdx].games.push(nQ);renderAdminQuestions(boxIdx);
+    setTimeout(()=>openEditModal(boxIdx,BOXES_DATA[boxIdx].games.length-1),100);
+};
 
 /* ════ PARAMÈTRES ════ */
 function loadAdminSettings(){const saved=localStorage.getItem('ssiapAdminSettings');if(!saved)return;const s=JSON.parse(saved);QUESTION_TIME=s.questionTime||30;POINTS_PER_ANSWER=s.pointsPerAnswer||150;SPEED_BONUS_MAX=s.speedBonusMax||100;QUESTIONS_PER_BOX=s.questionsPerBox||8;const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};set('question-time',QUESTION_TIME);set('points-per-answer',POINTS_PER_ANSWER);set('speed-bonus',SPEED_BONUS_MAX);set('questions-per-box',QUESTIONS_PER_BOX);}
