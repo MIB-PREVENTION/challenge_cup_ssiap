@@ -268,8 +268,8 @@
         <!-- QR CODE -->
         <div class="glass-morphism rounded-3xl shadow-2xl p-8 mb-6 text-center">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">📱 Connexion Stagiaires</h3>
-            <div id="qrcode-container" class="inline-block p-4 bg-white rounded-xl mb-4 shadow"></div>
-            <p class="text-sm text-gray-500 mt-2">Scannez le QR code pour rejoindre la session</p>
+            <div id="qrcode-container" class="inline-block p-4 bg-white rounded-xl mb-4 shadow cursor-pointer transition-transform hover:scale-105" onclick="openQrModal()" title="Cliquer pour agrandir"></div>
+            <p class="text-sm text-gray-500 mt-2">Scannez le QR code pour rejoindre la session <span class="text-xs italic">— cliquez pour agrandir</span></p>
             <p class="text-xs text-gray-400 mt-1">Session : <span id="session-id-display" class="font-mono"></span></p>
         </div>
         <!-- ÉQUIPES -->
@@ -500,6 +500,16 @@
     </div>
 
     <!-- MODAL : revue des réponses du stagiaire -->
+    <!-- QR code agrandi (plein écran) -->
+    <div id="qr-fullscreen-modal" class="hidden fixed inset-0 z-[100] bg-black/85 flex flex-col items-center justify-center p-6 cursor-pointer" onclick="closeQrModal()">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+            <div id="qr-fullscreen-container" class="flex items-center justify-center"></div>
+            <div class="text-center mt-4 text-gray-700 font-bold" id="qr-fullscreen-code"></div>
+        </div>
+        <p class="text-white text-lg mt-6">📱 Scannez pour rejoindre la session</p>
+        <p class="text-gray-300 text-sm mt-1">Cliquez n'importe où pour fermer</p>
+    </div>
+
     <div id="trainee-review-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between p-4 border-b-2 border-gray-200">
@@ -1594,6 +1604,24 @@ window.openTraineeReview=function(){
     document.getElementById('trainee-review-modal').classList.remove('hidden');
 };
 window.closeTraineeReview=function(){document.getElementById('trainee-review-modal').classList.add('hidden');};
+
+window.openQrModal=function(){
+    if(!sessionId)return;
+    const modal=document.getElementById('qr-fullscreen-modal');
+    const c=document.getElementById('qr-fullscreen-container');
+    c.innerHTML='';
+    // Size the QR to fit the smallest viewport dimension, with a comfortable margin.
+    const size=Math.min(window.innerWidth,window.innerHeight)-180;
+    new QRCode(c,{text:window.location.href.split('?')[0]+'?session='+sessionId,width:size,height:size,colorDark:'#1e3a8a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    document.getElementById('qr-fullscreen-code').textContent='Code session : '+sessionId;
+    modal.classList.remove('hidden');
+};
+window.closeQrModal=function(){document.getElementById('qr-fullscreen-modal').classList.add('hidden');};
+
+// ESC closes the fullscreen QR
+document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&!document.getElementById('qr-fullscreen-modal').classList.contains('hidden'))closeQrModal();
+});
 window.filterTraineeReview=function(f){
     traineeReviewFilter=f;
     ['all','bad','good'].forEach(k=>{
