@@ -169,6 +169,41 @@
             </div>
             <div class="text-center"><span class="inline-block px-4 py-2 bg-white rounded-xl shadow font-bold text-primary" id="level-active-label">🛡️ Niveau actif : SSIAP 1 — Équipier de sécurité</span></div>
         </div>
+        <!-- CONFIGURATION DE LA SESSION -->
+        <div class="glass-morphism rounded-3xl shadow-2xl p-4 mb-6">
+            <button id="config-toggle-btn" class="w-full flex items-center justify-between text-xl font-bold text-gray-800" onclick="toggleSessionConfig()">
+                <span>⚙️ Configuration de la session</span>
+                <span id="config-toggle-icon" class="text-base">▼</span>
+            </button>
+            <div id="session-config-body" class="hidden mt-4 space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">📚 Modules à inclure</label>
+                    <div id="cfg-modules-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">🎮 Types de jeu autorisés</label>
+                    <div id="cfg-types-list" class="flex flex-wrap gap-2 text-sm"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🎚️ Difficulté</label>
+                        <select id="cfg-difficulty" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="">Toutes</option>
+                            <option value="1">1 — Facile</option>
+                            <option value="2">2 — Moyen</option>
+                            <option value="3">3 — Difficile</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Questions par module</label>
+                        <input type="number" id="cfg-qpb" min="1" max="50" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" value="8">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="resetSessionConfig()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm">🔄 Tout cocher</button>
+                </div>
+            </div>
+        </div>
         <!-- QR CODE -->
         <div class="glass-morphism rounded-3xl shadow-2xl p-8 mb-6 text-center">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">📱 Connexion Stagiaires</h3>
@@ -520,6 +555,8 @@ window.addEventListener('catalogue-ready',()=>{
   // Re-render the boxes screen if currently visible (in case it loaded before data)
   const screen=document.getElementById('boxes-screen');
   if(screen&&!screen.classList.contains('hidden')&&typeof showBoxesScreen==='function')showBoxesScreen();
+  // Re-render the session-config panel so module checkboxes appear
+  if(typeof renderSessionConfigUI==='function')renderSessionConfigUI();
 });
 
 /* ════ INIT BACKEND (Firebase shim → Supabase) ════ */
@@ -594,7 +631,92 @@ function selectSSIAPLevel(level){
     const bL=document.getElementById('boxes-level-label');if(bL)bL.textContent=LEVEL_SHORT[level];
     const tL=document.getElementById('trainee-level-badge');if(tL)tL.textContent='🛡️ '+LEVEL_SHORT[level];
     if(database&&sessionId)database.ref(`sessions/${sessionId}/ssiapLevel`).set(level);
+    renderSessionConfigUI();
     fireLog('info','NIVEAU',`Niveau : ${LEVEL_LABELS[level]}`,{level});
+}
+
+/* ════ CONFIGURATION DE LA SESSION ════ */
+const GAME_TYPE_LABELS={quiz:'Quiz','true-false':'Vrai/Faux','multiple-select':'Multi','sequence':'Séquence','ranking':'Classement','matching':'Association','fill-blank':'À compléter','find-intruder':'Intrus','scenario':'Scénario','categories':'Catégories','decision':'Décision','image-identify':'Image'};
+const ALL_GAME_TYPES=Object.keys(GAME_TYPE_LABELS);
+let sessionConfig=loadSessionConfigFromLocal();
+
+function loadSessionConfigFromLocal(){
+    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null};}
+    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null};}
+}
+function saveSessionConfigToLocal(){localStorage.setItem('ssiapSessionConfig',JSON.stringify(sessionConfig));}
+
+window.toggleSessionConfig=function(){
+    const body=document.getElementById('session-config-body');const icon=document.getElementById('config-toggle-icon');
+    body.classList.toggle('hidden');icon.textContent=body.classList.contains('hidden')?'▼':'▲';
+    if(!body.classList.contains('hidden'))renderSessionConfigUI();
+};
+
+function renderSessionConfigUI(){
+    const modulesEl=document.getElementById('cfg-modules-list');if(!modulesEl)return;
+    // Modules for current level
+    const active=sessionConfig.activeModules;
+    modulesEl.innerHTML=BOXES_DATA.map(m=>{
+        const checked=active===null||active.includes(m.id);
+        return `<label class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 ${checked?'border-blue-300':'border-gray-200'} cursor-pointer">
+          <input type="checkbox" data-cfg-module="${m.id}" ${checked?'checked':''} class="w-4 h-4">
+          <span>${m.icon} <strong>${m.title}</strong> <span class="text-gray-500">(${m.games.length}q)</span></span>
+        </label>`;
+    }).join('');
+    modulesEl.querySelectorAll('input[data-cfg-module]').forEach(cb=>cb.addEventListener('change',onCfgChange));
+
+    // Types
+    const typesEl=document.getElementById('cfg-types-list');
+    const typesActive=sessionConfig.qtypeFilters;
+    typesEl.innerHTML=ALL_GAME_TYPES.map(t=>{
+        const checked=typesActive===null||typesActive.includes(t);
+        return `<label class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 ${checked?'border-emerald-300':'border-gray-200'} cursor-pointer">
+          <input type="checkbox" data-cfg-type="${t}" ${checked?'checked':''} class="w-4 h-4">
+          <span>${GAME_TYPE_LABELS[t]}</span>
+        </label>`;
+    }).join('');
+    typesEl.querySelectorAll('input[data-cfg-type]').forEach(cb=>cb.addEventListener('change',onCfgChange));
+
+    document.getElementById('cfg-difficulty').value=sessionConfig.diffFilter??'';
+    document.getElementById('cfg-qpb').value=sessionConfig.qpb??QUESTIONS_PER_BOX;
+}
+
+function onCfgChange(){
+    const modules=[...document.querySelectorAll('input[data-cfg-module]:checked')].map(c=>c.getAttribute('data-cfg-module'));
+    const types=[...document.querySelectorAll('input[data-cfg-type]:checked')].map(c=>c.getAttribute('data-cfg-type'));
+    const diff=document.getElementById('cfg-difficulty').value;
+    const qpb=parseInt(document.getElementById('cfg-qpb').value)||8;
+    // null = "tous" (différent de [] = "aucun")
+    const allMods=BOXES_DATA.map(m=>m.id);
+    sessionConfig={
+        activeModules: modules.length===allMods.length?null:modules,
+        qtypeFilters:  types.length===ALL_GAME_TYPES.length?null:types,
+        diffFilter:    diff||null,
+        qpb,
+    };
+    QUESTIONS_PER_BOX=qpb;
+    saveSessionConfigToLocal();
+    // Visual feedback
+    renderSessionConfigUI();
+}
+
+window.resetSessionConfig=function(){
+    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,qpb:8};
+    QUESTIONS_PER_BOX=8;
+    saveSessionConfigToLocal();
+    renderSessionConfigUI();
+};
+
+// Returns true if a module is enabled by the current session config.
+function moduleEnabled(moduleId){
+    return !sessionConfig.activeModules || sessionConfig.activeModules.includes(moduleId);
+}
+
+// Returns true if a question matches the current type/difficulty filters.
+function questionMatchesFilters(g){
+    if(sessionConfig.qtypeFilters&&!sessionConfig.qtypeFilters.includes(g.type))return false;
+    if(sessionConfig.diffFilter&&String(g.difficulty??1)!==String(sessionConfig.diffFilter))return false;
+    return true;
 }
 
 /* ════ HELPERS ════ */
@@ -657,7 +779,12 @@ function handleTimeUp(){
 
 /* ════ PRÉPARATION QUESTIONS ════ */
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function getRandomizedGames(boxIndex){return shuffle([...BOXES_DATA[boxIndex].games]).slice(0,Math.min(QUESTIONS_PER_BOX,BOXES_DATA[boxIndex].games.length));}
+function getRandomizedGames(boxIndex){
+    const all=BOXES_DATA[boxIndex].games||[];
+    const filtered=all.filter(questionMatchesFilters);
+    const pool=filtered.length?filtered:all; // fallback to "all" if filters wipe out the module
+    return shuffle([...pool]).slice(0,Math.min(QUESTIONS_PER_BOX,pool.length));
+}
 function prepareGameWithShuffledAnswers(game){
     const g={...game};
     if(['quiz','find-intruder','scenario','image-identify'].includes(game.type)){const arr=game.options.map((o,i)=>({text:o,originalIndex:i}));g.optionsWithIndex=shuffle(arr);g.options=g.optionsWithIndex.map(o=>o.text);}
@@ -703,7 +830,28 @@ function updateTeamsList(teams){
 window.removeTeam=function(tId){showConfirmDialog('Supprimer cette équipe ?',()=>database.ref('sessions/'+sessionId+'/teams/'+tId).remove());};
 
 /* ════ LANCEMENT ════ */
-document.getElementById('start-game-btn').addEventListener('click',()=>{database.ref('sessions/'+sessionId+'/status').set('playing');database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);showBoxesScreen();});
+document.getElementById('start-game-btn').addEventListener('click',async()=>{
+    // Persist the session config snapshot to Supabase (jsonb).
+    if(window.supa){
+        try{
+            const code=sessionId;
+            const session=await window.supa.sessions.getByCode(code);
+            if(session?.id){
+                await window.supa.sessions.update(session.id,{
+                    config:{
+                        qpb:QUESTIONS_PER_BOX,
+                        activeModules:sessionConfig.activeModules,
+                        qtypeFilters:sessionConfig.qtypeFilters,
+                        diffFilter:sessionConfig.diffFilter,
+                    },
+                });
+            }
+        }catch(e){console.warn('[config] save failed',e);}
+    }
+    database.ref('sessions/'+sessionId+'/status').set('playing');
+    database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);
+    showBoxesScreen();
+});
 function showBoxesScreen(){
     showScreenSafe('boxes-screen');
     document.getElementById('boxes-level-label').textContent=LEVEL_SHORT[SELECTED_SSIAP_LEVEL];
@@ -711,8 +859,16 @@ function showBoxesScreen(){
 }
 function renderBoxes(){
     document.getElementById('boxes-container').innerHTML=BOXES_DATA.map((box,idx)=>{
-        const done=openedBoxes.includes(idx);const nb=Math.min(QUESTIONS_PER_BOX,box.games.length);
-        return`<div class="glass-morphism rounded-3xl shadow-2xl p-8 text-center transform transition-all ${done?'box-disabled':'cursor-pointer hover:scale-105'}" onclick="${done?'':` openBox(${idx})`}"><div class="text-8xl mb-4 ${done?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${box.subtitle}</p><p class="text-xs text-gray-400 mb-3">${box.games.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${done?'✅ Terminé':nb+' questions — 12 types variés'}</div></div>`;
+        const done=openedBoxes.includes(idx);
+        const enabled=moduleEnabled(box.id);
+        const filtered=(box.games||[]).filter(questionMatchesFilters);
+        const pool=filtered.length?filtered:(box.games||[]);
+        const nb=Math.min(QUESTIONS_PER_BOX,pool.length);
+        const disabled=done||!enabled;
+        const click=disabled?'':`openBox(${idx})`;
+        const subtitle=enabled?box.subtitle:'(Module désactivé en config session)';
+        const footer=done?'✅ Terminé':(enabled?(nb+' questions — types variés'):'⏭️ Désactivé');
+        return`<div class="glass-morphism rounded-3xl shadow-2xl p-8 text-center transform transition-all ${disabled?'box-disabled':'cursor-pointer hover:scale-105'}" onclick="${click}"><div class="text-8xl mb-4 ${disabled?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${subtitle}</p><p class="text-xs text-gray-400 mb-3">${pool.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${footer}</div></div>`;
     }).join('');
 }
 window.openBox=function(boxIndex){
@@ -825,7 +981,13 @@ document.getElementById('next-question-btn').addEventListener('click',()=>{
     currentGameIndex++;
     database.ref('sessions/'+sessionId+'/randomizedGames').once('value',snap=>{
         const games=snap.val();if(!games)return;
-        if(currentGameIndex>=games.length){if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);currentBox<BOXES_DATA.length-1?showPauseScreen():showPodiumSupervisor();}
+        if(currentGameIndex>=games.length){
+            if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);
+            database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);
+            // Are there still enabled modules not yet opened?
+            const remaining=BOXES_DATA.some((b,i)=>i!==currentBox&&!openedBoxes.includes(i)&&moduleEnabled(b.id));
+            remaining?showPauseScreen():showPodiumSupervisor();
+        }
         else loadGame();
     });
 });
