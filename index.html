@@ -989,17 +989,24 @@ function playApplauseProcedural(){
     src.start(now);src.stop(now+duration+.05);
 }
 // Try a real applause MP3 first; fall back to procedural.
+// Sources are tried in order: local file (drop your own MP3 in /sounds/),
+// then a Supabase-hosted file shared with the RPP project, then synth.
+const APPLAUSE_SOURCES=[
+    'sounds/applause.mp3',
+    'https://xjfbuztrfysxtegxluwd.supabase.co/storage/v1/object/public/son/emircanalp-applause-alks-ses-efekti-125030.mp3',
+];
 let _applauseAudio=null;
 function playApplause(){
-    try{
-        if(!_applauseAudio){
-            _applauseAudio=new Audio('sounds/applause.mp3');
-            _applauseAudio.preload='auto';
-            _applauseAudio.volume=.7;
-        }
-        _applauseAudio.currentTime=0;
-        _applauseAudio.play().catch(()=>playApplauseProcedural());
-    }catch{playApplauseProcedural();}
+    const tryNext=(i)=>{
+        if(i>=APPLAUSE_SOURCES.length){playApplauseProcedural();return;}
+        try{
+            const a=new Audio(APPLAUSE_SOURCES[i]);
+            a.preload='auto';a.volume=.7;
+            a.play().then(()=>{_applauseAudio=a;}).catch(()=>tryNext(i+1));
+        }catch{tryNext(i+1);}
+    };
+    if(_applauseAudio){_applauseAudio.currentTime=0;_applauseAudio.play().catch(()=>tryNext(0));return;}
+    tryNext(0);
 }
 
 function startQuestionTimer(){

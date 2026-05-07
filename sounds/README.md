@@ -1,13 +1,21 @@
 # Audio assets
 
-Place an MP3 named **`applause.mp3`** in this directory to override the
-procedural applause that plays on the supervisor podium.
+The supervisor podium plays an applause sound that is resolved in this
+order at runtime:
 
-The file should be at the path `/sounds/applause.mp3` from the site root,
-e.g. served at `http://localhost:8080/sounds/applause.mp3`.
+1. **Local file** — drop a file at this path: `sounds/applause.mp3`
+   (relative to the site root, served at `/sounds/applause.mp3`).
+2. **Shared Supabase storage** — falls back to the public RPP project
+   bucket (`son/emircanalp-applause-alks-ses-efekti-125030.mp3`).
+3. **Procedural fallback** — synthesized claps + crowd noise via WebAudio
+   if neither of the above can be played.
 
-Recommended length: 3 to 5 seconds. Any browser-supported audio format
-that decodes via the `Audio` element will work (MP3, OGG, WAV).
+Source #2 ensures the supervisor podium has a real applause sound out
+of the box, without any setup. Drop a file at #1 to override it with
+your own audio if you want.
 
-If the file is missing, the app falls back to a procedural applause
-generated with WebAudio (multiple synthesized claps + crowd-noise layer).
+A dedicated `sounds` Storage bucket exists on the SSIAP Supabase project
+(see migration 0012) for hosting custom audio uploads, but is currently
+unused — the runtime falls back to the RPP-hosted file.
+
+Recommended length: 3 to 5 seconds. Any browser-supported format works.
