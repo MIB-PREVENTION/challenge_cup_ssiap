@@ -893,6 +893,24 @@ function showCustomAlert(msg){const m=document.createElement('div');m.className=
 function showConfirmDialog(msg,onConfirm){const m=document.createElement('div');m.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';m.innerHTML=`<div class="glass-morphism p-8 rounded-2xl shadow-2xl max-w-md w-full bounce-in border-2 border-blue-400"><p class="text-gray-700 mb-6 text-center text-xl font-semibold">${msg}</p><div class="flex gap-3"><button class="flex-1 px-6 py-4 bg-gray-500 text-white rounded-xl font-bold" onclick="this.closest('.fixed').remove()">Annuler</button><button id="confirm-ok" class="flex-1 px-6 py-4 ssiap-gradient text-white rounded-xl font-bold">Confirmer</button></div></div>`;document.body.appendChild(m);m.querySelector('#confirm-ok').addEventListener('click',()=>{m.remove();onConfirm();});}
 function getPictoHtml(game,size){const s=size||'160px';if(game.imageKey&&PICTOGRAMS[game.imageKey])return`<div style="width:${s};height:${s};margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,.2)">${PICTOGRAMS[game.imageKey]}</div>`;return`<div class="text-9xl text-center float">${game.image||'🖼️'}</div>`;}
 
+// Renders the uploaded image/video attached to a question (if any).
+// Used both on the projector and the trainee phone, prepended to the
+// question content. `variant` lets us scale per surface.
+function renderUploadedMedia(game, variant='trainee'){
+    if(!game||(!game.imageUrl&&!game.videoUrl))return '';
+    const big=variant==='projector';
+    const maxH=big?'320px':'220px';
+    let html='<div class="flex flex-col items-center justify-center mb-4">';
+    if(game.imageUrl){
+        html+=`<img src="${game.imageUrl}" alt="" style="max-height:${maxH};max-width:100%;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);object-fit:contain">`;
+    }
+    if(game.videoUrl){
+        html+=`<video src="${game.videoUrl}" controls ${big?'autoplay':''} style="max-height:${maxH};max-width:100%;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);background:#000"></video>`;
+    }
+    html+='</div>';
+    return html;
+}
+
 /* ════ LABELS & ICÔNES — 12 types ════ */
 function getGameTypeLabel(type){return{'quiz':'❓ Quiz','true-false':'✓✗ Vrai / Faux','sequence':'🔢 Remet dans l\'ordre','matching':'🔗 Association','find-intruder':'🔍 Trouve l\'intrus','multiple-select':'☑️ Plusieurs réponses','scenario':'🎭 Mise en situation','ranking':'🏅 Classement','fill-blank':'✍️ Texte à trous','categories':'📂 Trie dans les catégories','decision':'🌳 Arbre de décision','image-identify':'🖼️ Identifie le panneau'}[type]||'🎯 Question';}
 function getGameIcon(type){return{'quiz':'❓','true-false':'✓✗','sequence':'🔢','matching':'🔗','find-intruder':'🔍','multiple-select':'☑️','scenario':'🎭','ranking':'🏅','fill-blank':'✍️','categories':'📂','decision':'🌳','image-identify':'🖼️'}[type]||'🎯';}
@@ -1269,7 +1287,7 @@ function showProjectorQuestion(game){
     document.getElementById('projector-question-text').textContent=game.question;
     const sb=document.getElementById('projector-scenario-box'),st=document.getElementById('projector-scenario-text');
     if(game.scenario){st.textContent=game.scenario;sb.classList.remove('hidden');}else sb.classList.add('hidden');
-    document.getElementById('projector-game-container').innerHTML=renderGameForProjector(game);
+    document.getElementById('projector-game-container').innerHTML=renderUploadedMedia(game,'projector')+renderGameForProjector(game);
     startQuestionTimer();
 }
 function renderGameForProjector(game){
@@ -1341,7 +1359,7 @@ function startAnswersCountListener(){
 function showCorrection(){
     database.ref('sessions/'+sessionId+'/currentGame').once('value',snap=>{
         const game=snap.val();if(!game)return;calculateAndUpdateScores(game);
-        setTimeout(()=>{database.ref('sessions/'+sessionId+'/gameStatus').set('correction').then(()=>{setTimeout(()=>{showScreenSafe('projector-correction');document.getElementById('projector-explanation').textContent=game.explanation||'Bonne réponse !';document.getElementById('projector-correction-content').innerHTML=renderCorrection(game);},500);});},300);
+        setTimeout(()=>{database.ref('sessions/'+sessionId+'/gameStatus').set('correction').then(()=>{setTimeout(()=>{showScreenSafe('projector-correction');document.getElementById('projector-explanation').textContent=game.explanation||'Bonne réponse !';document.getElementById('projector-correction-content').innerHTML=renderUploadedMedia(game,'projector')+renderCorrection(game);},500);});},300);
     });
 }
 function renderCorrection(game){
@@ -1636,7 +1654,7 @@ function showTraineeGame(game){
     lastTraineeGame=game;showScreenSafe('trainee-game');
     document.getElementById('trainee-team-display').innerHTML=`<span class="inline-flex items-center gap-2">${renderAvatar(selectedAvatar||'🛡️','av-md')} ${teamName}</span>`;
     database.ref('sessions/'+sessionId+'/teams/'+teamId+'/score').on('value',s=>{document.getElementById('trainee-score-display').textContent=(s.val()||0)+' pts';});
-    document.getElementById('trainee-game-container').innerHTML=renderGameForTrainee(game);
+    document.getElementById('trainee-game-container').innerHTML=renderUploadedMedia(game,'trainee')+renderGameForTrainee(game);
     selectedAnswer=null;selectedSequence=[];selectedMultiple=[];selectedRanking=[];fillBlankAnswers=[];categoriesAnswers={};decisionPath=[];selectedCatItem=null;matchingLeft=null;matchingRight=null;
     const btn=document.getElementById('trainee-validate-btn');btn.disabled=false;btn.textContent='✓ Valider ma réponse';btn.classList.remove('opacity-50','cursor-not-allowed');btn.onclick=()=>validateTraineeAnswer(game);
 }
