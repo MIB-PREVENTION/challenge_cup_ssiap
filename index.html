@@ -144,6 +144,15 @@
         .avatar-btn{font-size:1.7rem;padding:.5rem;border:3px solid transparent;border-radius:.75rem;background:white;cursor:pointer;transition:all .25s;line-height:1}
         .avatar-btn:hover{transform:scale(1.1)}
         .avatar-btn.selected{border-color:#3b82f6;background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(99,102,241,.1));box-shadow:0 0 14px rgba(59,130,246,.4);transform:scale(1.08)}
+        /* Buzzer toast (projector) when a team submits */
+        @keyframes buzzer-in{0%{transform:translateX(120%) scale(.7);opacity:0}30%{transform:translateX(-8%) scale(1.08);opacity:1}55%{transform:translateX(0) scale(1)}100%{transform:translateX(0) scale(1);opacity:1}}
+        @keyframes buzzer-out{0%{transform:translateX(0) scale(1);opacity:1}100%{transform:translateX(120%) scale(.85);opacity:0}}
+        #buzzer-stack{position:fixed;top:6rem;right:1.5rem;z-index:60;display:flex;flex-direction:column;gap:.75rem;pointer-events:none}
+        .buzzer-toast{display:flex;align-items:center;gap:.85rem;background:linear-gradient(135deg,#10b981,#0ea5e9);color:white;padding:.75rem 1.25rem;border-radius:9999px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:800;animation:buzzer-in .55s cubic-bezier(.25,1.3,.6,1) forwards;min-width:240px}
+        .buzzer-toast.leaving{animation:buzzer-out .35s ease-in forwards}
+        .buzzer-toast .bz-avatar{font-size:2rem;line-height:1}
+        .buzzer-toast .bz-name{font-size:1.05rem}
+        .buzzer-toast .bz-hint{font-size:.7rem;opacity:.85;font-weight:600}
     </style>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#3B82F6',secondary:'#6366F1'}}}}</script>
 </head>
@@ -1177,15 +1186,49 @@ function renderGameForProjector(game){
 }
 
 /* ════ CORRECTION ════ */
+// Buzzer notifications: track which teams have already been announced
+// for the current question so we don't fire twice on Realtime echoes.
+let buzzedTeams=new Set();
+let teamsBuzzListener=null;
+
+function showBuzzerToast(team){
+    let stack=document.getElementById('buzzer-stack');
+    if(!stack){stack=document.createElement('div');stack.id='buzzer-stack';document.body.appendChild(stack);}
+    const toast=document.createElement('div');
+    toast.className='buzzer-toast';
+    toast.innerHTML=`<span class="bz-avatar">${team.avatar||'🛡️'}</span><div><div class="bz-name">${team.name||'?'}</div><div class="bz-hint">a répondu !</div></div>`;
+    stack.appendChild(toast);
+    setTimeout(()=>{toast.classList.add('leaving');setTimeout(()=>toast.remove(),400);},2400);
+}
+
 function startAnswersCountListener(){
     database.ref('sessions/'+sessionId+'/teams').once('value',snap=>{
         const teams=snap.val();if(!teams)return;const total=Object.keys(teams).length;
         document.getElementById('total-teams-count').textContent=total;
+        // Reset the buzzer dedupe set for the new question
+        buzzedTeams.clear();
         answersListener=snap=>{
             const count=snap.val()||0;document.getElementById('answered-count').textContent=count;document.getElementById('total-teams-count').textContent=total;
-            if(count>=total&&total>0){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}if(answersListener){database.ref('sessions/'+sessionId+'/answersCount').off('value',answersListener);answersListener=null;}showCorrection();}
+            if(count>=total&&total>0){
+                if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+                if(answersListener){database.ref('sessions/'+sessionId+'/answersCount').off('value',answersListener);answersListener=null;}
+                if(teamsBuzzListener){database.ref('sessions/'+sessionId+'/teams').off('value',teamsBuzzListener);teamsBuzzListener=null;}
+                showCorrection();
+            }
         };
         database.ref('sessions/'+sessionId+'/answersCount').on('value',answersListener);
+        // Buzzer: watch teams for has_answered -> true transitions
+        teamsBuzzListener=snap=>{
+            const ts=snap.val()||{};
+            for(const [id,t] of Object.entries(ts)){
+                if(t?.hasAnswered&&!buzzedTeams.has(id)){
+                    buzzedTeams.add(id);
+                    showBuzzerToast({name:t.name,avatar:t.avatar});
+                    playBuzzer();
+                }
+            }
+        };
+        database.ref('sessions/'+sessionId+'/teams').on('value',teamsBuzzListener);
     });
 }
 function showCorrection(){
