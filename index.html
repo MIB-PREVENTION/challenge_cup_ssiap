@@ -283,6 +283,7 @@
             <button id="start-game-btn" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚀 Lancer le Jeu</button>
             <button id="admin-btn" class="px-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">⚙️ Administration</button>
             <button id="reset-game-btn" class="px-8 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🔄 Réinitialiser</button>
+            <button id="logout-btn" class="px-8 bg-gradient-to-r from-gray-500 to-gray-700 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚪 Déconnexion</button>
         </div>
     </div>
 
@@ -695,7 +696,8 @@ let matchingLeft=null,matchingRight=null;
 let SELECTED_SSIAP_LEVEL=1;
 const LEVEL_LABELS={1:'🛡️ SSIAP 1 — Équipier de sécurité',2:'🛡️🛡️ SSIAP 2 — Chef d\'équipe',3:'🛡️🛡️🛡️ SSIAP 3 — Chef de service'};
 const LEVEL_SHORT={1:'SSIAP 1',2:'SSIAP 2',3:'SSIAP 3'};
-const SUPERVISOR_PASSWORD='SSIAP2025';
+// Supervisor password is stored bcrypt-hashed in Supabase (table public.supervisors)
+// and verified via the verify_supervisor RPC. No hard-coded fallback.
 let QUESTION_TIME=30,POINTS_PER_ANSWER=150,SPEED_BONUS_MAX=100,SYNC_DELAY=800,QUESTIONS_PER_BOX=8;
 let _logsCache=[],_allLogs=[];
 
@@ -1130,10 +1132,12 @@ document.getElementById('supervisor-login-form').addEventListener('submit',async
     e.preventDefault();const pwd=document.getElementById('supervisor-password').value;
     let authed=false;
     try{
-      if(window.supa){
-        const u=await window.supa.auth.login('admin@ssiap.local',pwd);
-        authed=!!u;
-      }else if(pwd===SUPERVISOR_PASSWORD){authed=true;}
+      // Wait for the Supabase client to be ready (module script loads async).
+      const start=Date.now();
+      while(!window.supa&&Date.now()-start<3000){await new Promise(r=>setTimeout(r,50));}
+      if(!window.supa){showCustomAlert('❌ Backend indisponible, réessayez.');return;}
+      const u=await window.supa.auth.login('admin@ssiap.local',pwd);
+      authed=!!u;
     }catch(err){console.error('[auth]',err);}
     if(authed){userRole='supervisor';sessionId='ssiap_'+generateUUID();loadAdminSettings();initializeSupervisor();}
     else{const err=document.getElementById('login-error');err.classList.remove('hidden');setTimeout(()=>err.classList.add('hidden'),3000);}
@@ -1603,6 +1607,11 @@ window.filterTraineeReview=function(f){
 document.getElementById('back-dashboard-podium-btn').addEventListener('click',()=>showScreenSafe('supervisor-dashboard'));
 document.getElementById('restart-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
 document.getElementById('reset-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
+document.getElementById('logout-btn').addEventListener('click',()=>{showConfirmDialog('Se déconnecter ?<br><small>La session active sera supprimée.</small>',()=>{
+    if(database&&sessionId){try{database.ref('sessions/'+sessionId).remove();}catch{}}
+    sessionId=null;userRole=null;teamId=null;teamName=null;
+    location.reload();
+});});
 
 /* ════ CONNEXION STAGIAIRE ════ */
 function saveSessionToLocalStorage(){if(sessionId&&teamId&&teamName)localStorage.setItem('ssiapTraineeSession',JSON.stringify({sessionId,teamId,teamName}));}
