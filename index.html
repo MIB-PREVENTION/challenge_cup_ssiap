@@ -841,13 +841,58 @@ function getGameIcon(type){return{'quiz':'❓','true-false':'✓✗','sequence':
 
 /* ════ CALCUL POINTS & TIMER ════ */
 function calculatePointsWithSpeedBonus(isCorrect,elapsedTime){if(!isCorrect)return{basePoints:0,speedBonus:0,totalPoints:0};const base=POINTS_PER_ANSWER,end=QUESTION_TIME-5;const bonus=elapsedTime<end?Math.max(0,Math.round(SPEED_BONUS_MAX*(1-elapsedTime/end))):0;return{basePoints:base,speedBonus:bonus,totalPoints:base+bonus};}
+/* ════ AUDIO ENGINE (WebAudio, no external assets) ════ */
+let _audioCtx=null;
+function audioCtx(){
+    if(!_audioCtx){
+        try{_audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{return null;}
+    }
+    if(_audioCtx.state==='suspended')_audioCtx.resume().catch(()=>{});
+    return _audioCtx;
+}
+// Tone with optional ramp + simple ADSR-ish envelope
+function playTone({freq=800,duration=.15,volume=.25,type='sine',freqEnd=null,attack=.01,release=.05}={}){
+    const ctx=audioCtx();if(!ctx)return;
+    const t=ctx.currentTime;
+    const osc=ctx.createOscillator();osc.type=type;osc.frequency.setValueAtTime(freq,t);
+    if(freqEnd)osc.frequency.exponentialRampToValueAtTime(Math.max(0.001,freqEnd),t+duration);
+    const gain=ctx.createGain();gain.gain.setValueAtTime(0,t);
+    gain.gain.linearRampToValueAtTime(volume,t+attack);
+    gain.gain.setValueAtTime(volume,t+duration-release);
+    gain.gain.linearRampToValueAtTime(0,t+duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);osc.stop(t+duration+.02);
+}
+// Countdown bip — pitch and volume rise as time runs out (10 → 1).
+function playCountdownBeep(secondsLeft){
+    const t=Math.max(1,Math.min(10,secondsLeft));
+    const freq=600+(11-t)*60;          // 660..1200 Hz
+    const vol=.08+(11-t)*.025;         // .08..0.33
+    playTone({freq,duration:.12,volume:vol,type:'square'});
+}
+// Gong — low decaying tone for time up
+function playGong(){
+    playTone({freq:140,freqEnd:60,duration:.9,volume:.4,type:'triangle',attack:.005,release:.6});
+    setTimeout(()=>playTone({freq:90,freqEnd:50,duration:.7,volume:.25,type:'sine'}),60);
+}
+// Buzzer — short 'bling' when a team answers
+function playBuzzer(){
+    playTone({freq:880,duration:.08,volume:.18,type:'sine'});
+    setTimeout(()=>playTone({freq:1320,duration:.1,volume:.22,type:'sine'}),70);
+}
+// Applause / fanfare for podium (optional)
+function playFanfare(){
+    [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone({freq:f,duration:.18,volume:.22,type:'triangle'}),i*120));
+}
+
 function startQuestionTimer(){
     timeRemaining=QUESTION_TIME;questionStartTime=Date.now();
     const d=document.getElementById('timer-display');d.textContent=timeRemaining;d.style.color='white';d.classList.remove('pulse-anim');
     timerInterval=setInterval(()=>{
         timeRemaining--;d.textContent=timeRemaining;
         if(timeRemaining<=5){d.style.color='#FCD34D';d.classList.add('pulse-anim');}else if(timeRemaining<=10)d.style.color='#FFA500';
-        if(timeRemaining<=0){clearInterval(timerInterval);timerInterval=null;handleTimeUp();}
+        if(timeRemaining>0&&timeRemaining<=10)playCountdownBeep(timeRemaining);
+        if(timeRemaining<=0){clearInterval(timerInterval);timerInterval=null;playGong();handleTimeUp();}
     },1000);
 }
 function handleTimeUp(){
