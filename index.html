@@ -268,6 +268,18 @@
                         <input type="number" id="cfg-libre-count" min="1" max="200" class="w-full md:w-40 px-3 py-2 border-2 border-purple-300 rounded-lg text-sm" value="20">
                     </div>
                 </div>
+                <!-- Training Quiz -->
+                <div class="border-t-2 border-gray-200 pt-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="cfg-training-toggle" class="w-5 h-5">
+                        <span class="font-bold text-gray-800">🎓 Training Quiz</span>
+                        <span class="text-xs text-gray-500">— tirage aléatoire dans la banque <strong>quiz pur</strong> uniquement (les modules cochés au-dessus s'appliquent)</span>
+                    </label>
+                    <div id="cfg-training-row" class="hidden mt-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Nombre de questions</label>
+                        <input type="number" id="cfg-training-count" min="1" max="200" class="w-full md:w-40 px-3 py-2 border-2 border-emerald-300 rounded-lg text-sm" value="20">
+                    </div>
+                </div>
                 <div class="flex justify-end gap-2">
                     <button onclick="resetSessionConfig()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm">🔄 Réinitialiser tout</button>
                 </div>
@@ -798,8 +810,8 @@ const ALL_GAME_TYPES=Object.keys(GAME_TYPE_LABELS);
 let sessionConfig=loadSessionConfigFromLocal();
 
 function loadSessionConfigFromLocal(){
-    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20};}
-    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20};}
+    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};}
+    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};}
 }
 function saveSessionConfigToLocal(){localStorage.setItem('ssiapSessionConfig',JSON.stringify(sessionConfig));}
 
@@ -848,10 +860,31 @@ function renderSessionConfigUI(){
         libreCount.value=sessionConfig.libreCount??20;
         libreToggle.onchange=()=>{
             sessionConfig.libreMode=libreToggle.checked;
+            // Mutually exclusive with training mode
+            if(libreToggle.checked)sessionConfig.trainingMode=false;
             saveSessionConfigToLocal();renderSessionConfigUI();updateStartButtonLabel();
         };
         libreCount.onchange=()=>{
             sessionConfig.libreCount=Math.max(1,parseInt(libreCount.value)||20);
+            saveSessionConfigToLocal();
+        };
+    }
+    // Training Quiz
+    const trainingToggle=document.getElementById('cfg-training-toggle');
+    const trainingRow=document.getElementById('cfg-training-row');
+    const trainingCount=document.getElementById('cfg-training-count');
+    if(trainingToggle){
+        trainingToggle.checked=!!sessionConfig.trainingMode;
+        trainingRow.classList.toggle('hidden',!sessionConfig.trainingMode);
+        trainingCount.value=sessionConfig.trainingCount??20;
+        trainingToggle.onchange=()=>{
+            sessionConfig.trainingMode=trainingToggle.checked;
+            // Mutually exclusive with libre mode
+            if(trainingToggle.checked)sessionConfig.libreMode=false;
+            saveSessionConfigToLocal();renderSessionConfigUI();updateStartButtonLabel();
+        };
+        trainingCount.onchange=()=>{
+            sessionConfig.trainingCount=Math.max(1,parseInt(trainingCount.value)||20);
             saveSessionConfigToLocal();
         };
     }
@@ -861,7 +894,9 @@ function renderSessionConfigUI(){
 function updateStartButtonLabel(){
     const btn=document.getElementById('start-game-btn');
     if(!btn)return;
-    btn.textContent=sessionConfig.libreMode?'🎲 Lancer le Mode Libre':'🚀 Lancer le Jeu';
+    if(sessionConfig.trainingMode)btn.textContent='🎓 Lancer Training Quiz';
+    else if(sessionConfig.libreMode)btn.textContent='🎲 Lancer le Mode Libre';
+    else btn.textContent='🚀 Lancer le Jeu';
 }
 
 function onCfgChange(){
@@ -888,7 +923,7 @@ function onCfgChange(){
 }
 
 window.resetSessionConfig=function(){
-    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:8,libreMode:false,libreCount:20};
+    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:8,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};
     QUESTIONS_PER_BOX=8;
     saveSessionConfigToLocal();
     renderSessionConfigUI();
@@ -1177,6 +1212,8 @@ document.getElementById('start-game-btn').addEventListener('click',async()=>{
                         poolFilter:sessionConfig.poolFilter,
                         libreMode:sessionConfig.libreMode,
                         libreCount:sessionConfig.libreCount,
+                        trainingMode:sessionConfig.trainingMode,
+                        trainingCount:sessionConfig.trainingCount,
                     },
                 });
             }
@@ -1184,8 +1221,11 @@ document.getElementById('start-game-btn').addEventListener('click',async()=>{
     }
     database.ref('sessions/'+sessionId+'/status').set('playing');
     database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);
-    if(sessionConfig.libreMode){
-        // Skip the boxes screen entirely
+    if(sessionConfig.trainingMode){
+        // Quiz training mode (pure QCM from pool='quiz')
+        launchTrainingMode();
+    }else if(sessionConfig.libreMode){
+        // Skip the boxes screen entirely (any pool, all types)
         launchLibreMode();
     }else{
         showBoxesScreen();
@@ -1319,6 +1359,29 @@ function launchLibreMode(){
     const typesMap={};games.forEach(g=>{typesMap[g.type]=(typesMap[g.type]||0)+1;});
     const typesStr=Object.entries(typesMap).map(([t,n])=>`${n}×${getGameIcon(t)}`).join(' ');
     fireLog('info','LIBRE',`Mode libre : ${games.length}q sur ${pool.length} disponibles — Types: ${typesStr}`,{count:games.length,level:SELECTED_SSIAP_LEVEL});
+    database.ref('sessions/'+sessionId).update({currentBox:-1,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
+    loadGame();
+}
+
+// Training Quiz — like Mode libre but FORCED to pool='quiz' (pure QCM).
+// The active modules selection above the toggle still applies; type/difficulty
+// filters also apply.
+function launchTrainingMode(){
+    const enabledModules=BOXES_DATA.filter(m=>moduleEnabled(m.id));
+    const pool=[];
+    for(const m of enabledModules){
+        for(const g of (m.games||[])){
+            if((g.pool||'quiz')!=='quiz')continue;            // force pool=quiz
+            if(sessionConfig.qtypeFilters&&!sessionConfig.qtypeFilters.includes(g.type))continue;
+            if(sessionConfig.diffFilter&&String(g.difficulty??1)!==String(sessionConfig.diffFilter))continue;
+            pool.push(g);
+        }
+    }
+    if(!pool.length){showCustomAlert('❌ Aucune question quiz disponible avec ces modules / filtres.');return;}
+    const count=Math.min(sessionConfig.trainingCount||20,pool.length);
+    const games=shuffle(pool).slice(0,count);
+    currentBox=-1;currentGameIndex=0;
+    fireLog('info','TRAINING',`Training Quiz : ${games.length}q sur ${pool.length} disponibles (pool=quiz)`,{count:games.length,level:SELECTED_SSIAP_LEVEL});
     database.ref('sessions/'+sessionId).update({currentBox:-1,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
     loadGame();
 }
