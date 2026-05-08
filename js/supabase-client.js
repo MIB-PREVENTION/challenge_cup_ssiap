@@ -218,7 +218,7 @@ export function reshapeQuestion(q) {
 
   // Only include fields that have a value, so the legacy admin form's
   // `if (game.sentence !== undefined)` checks behave correctly.
-  const out = { id: q.id, type: q.type, question: q.question };
+  const out = { id: q.id, type: q.type, question: q.question, pool: q.pool ?? 'quiz' };
   const optional = {
     title:          q.title,
     scenario:       q.scenario,

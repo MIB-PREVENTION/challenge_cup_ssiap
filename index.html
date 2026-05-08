@@ -233,7 +233,15 @@
                     </div>
                     <div id="cfg-types-list" class="flex flex-wrap gap-2 text-sm"></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">📚 Banque</label>
+                        <select id="cfg-pool" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="">Les deux</option>
+                            <option value="challenge">🎯 Challenge (12 types)</option>
+                            <option value="quiz">❓ Quiz pur (QCM)</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">🎚️ Difficulté</label>
                         <select id="cfg-difficulty" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
@@ -244,7 +252,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Questions par module</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Questions / module</label>
                         <input type="number" id="cfg-qpb" min="1" max="50" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" value="8">
                     </div>
                 </div>
@@ -790,8 +798,8 @@ const ALL_GAME_TYPES=Object.keys(GAME_TYPE_LABELS);
 let sessionConfig=loadSessionConfigFromLocal();
 
 function loadSessionConfigFromLocal(){
-    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null,libreMode:false,libreCount:20};}
-    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,qpb:null,libreMode:false,libreCount:20};}
+    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20};}
+    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20};}
 }
 function saveSessionConfigToLocal(){localStorage.setItem('ssiapSessionConfig',JSON.stringify(sessionConfig));}
 
@@ -827,6 +835,7 @@ function renderSessionConfigUI(){
     typesEl.querySelectorAll('input[data-cfg-type]').forEach(cb=>cb.addEventListener('change',onCfgChange));
 
     document.getElementById('cfg-difficulty').value=sessionConfig.diffFilter??'';
+    document.getElementById('cfg-pool').value=sessionConfig.poolFilter??'';
     document.getElementById('cfg-qpb').value=sessionConfig.qpb??QUESTIONS_PER_BOX;
 
     // Libre mode
@@ -859,6 +868,7 @@ function onCfgChange(){
     const modules=[...document.querySelectorAll('input[data-cfg-module]:checked')].map(c=>c.getAttribute('data-cfg-module'));
     const types=[...document.querySelectorAll('input[data-cfg-type]:checked')].map(c=>c.getAttribute('data-cfg-type'));
     const diff=document.getElementById('cfg-difficulty').value;
+    const pool=document.getElementById('cfg-pool').value;
     const qpb=parseInt(document.getElementById('cfg-qpb').value)||8;
     // null = "tous" (différent de [] = "aucun")
     const allMods=BOXES_DATA.map(m=>m.id);
@@ -866,7 +876,10 @@ function onCfgChange(){
         activeModules: modules.length===allMods.length?null:modules,
         qtypeFilters:  types.length===ALL_GAME_TYPES.length?null:types,
         diffFilter:    diff||null,
+        poolFilter:    pool||null,
         qpb,
+        libreMode:     sessionConfig.libreMode,
+        libreCount:    sessionConfig.libreCount,
     };
     QUESTIONS_PER_BOX=qpb;
     saveSessionConfigToLocal();
@@ -875,7 +888,7 @@ function onCfgChange(){
 }
 
 window.resetSessionConfig=function(){
-    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,qpb:8};
+    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:8,libreMode:false,libreCount:20};
     QUESTIONS_PER_BOX=8;
     saveSessionConfigToLocal();
     renderSessionConfigUI();
@@ -897,10 +910,11 @@ function moduleEnabled(moduleId){
     return !sessionConfig.activeModules || sessionConfig.activeModules.includes(moduleId);
 }
 
-// Returns true if a question matches the current type/difficulty filters.
+// Returns true if a question matches the current type / difficulty / pool filters.
 function questionMatchesFilters(g){
     if(sessionConfig.qtypeFilters&&!sessionConfig.qtypeFilters.includes(g.type))return false;
     if(sessionConfig.diffFilter&&String(g.difficulty??1)!==String(sessionConfig.diffFilter))return false;
+    if(sessionConfig.poolFilter&&(g.pool||'quiz')!==sessionConfig.poolFilter)return false;
     return true;
 }
 
@@ -1160,6 +1174,7 @@ document.getElementById('start-game-btn').addEventListener('click',async()=>{
                         activeModules:sessionConfig.activeModules,
                         qtypeFilters:sessionConfig.qtypeFilters,
                         diffFilter:sessionConfig.diffFilter,
+                        poolFilter:sessionConfig.poolFilter,
                         libreMode:sessionConfig.libreMode,
                         libreCount:sessionConfig.libreCount,
                     },
@@ -1845,7 +1860,21 @@ window.deleteQuestion=function(bIdx,gIdx){
 window.openEditModal=function(bIdx,gIdx){editingBox=bIdx;editingGame=gIdx;const game=BOXES_DATA[bIdx].games[gIdx];document.getElementById('modal-edit-content').innerHTML=buildEditForm(game);document.getElementById('question-edit-modal').classList.remove('hidden');};
 window.closeEditModal=function(){document.getElementById('question-edit-modal').classList.add('hidden');editingBox=-1;editingGame=-1;};
 function buildEditForm(game){
-    let html=`<div class="space-y-4"><div><label class="block text-sm font-bold text-gray-700 mb-1">Type</label><div class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-600">${getGameTypeLabel(game.type)}</div></div>`;
+    const pool=game.pool||'quiz';
+    let html=`<div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Type</label>
+          <div class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-600">${getGameTypeLabel(game.type)}</div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Banque</label>
+          <select id="edit-pool" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm font-bold">
+            <option value="quiz" ${pool==='quiz'?'selected':''}>❓ Quiz pur</option>
+            <option value="challenge" ${pool==='challenge'?'selected':''}>🎯 Challenge</option>
+          </select>
+        </div>
+      </div>`;
     if(game.scenario!==undefined)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">📋 Scénario</label><textarea id="edit-scenario" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.scenario||''}</textarea></div>`;
     html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">❓ Question</label><textarea id="edit-question" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="2">${game.question}</textarea></div>`;
     if(game.options){html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Options</label><div class="space-y-2">`;game.options.forEach((opt,i)=>{const isC=Array.isArray(game.correctAnswers)?game.correctAnswers.includes(i):game.correctAnswer===i;html+=`<div class="flex items-center gap-2"><input type="${Array.isArray(game.correctAnswers)?'checkbox':'radio'}" name="correct" value="${i}" ${isC?'checked':''} id="opt-check-${i}" class="w-4 h-4"><input type="text" id="opt-${i}" value="${opt}" class="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"><label for="opt-check-${i}" class="text-xs text-green-700 font-bold">✓</label></div>`;});html+=`</div></div>`;}
@@ -1954,6 +1983,7 @@ function gameToDbPayload(game, moduleId, displayOrder) {
         image_key:       game.imageKey ?? null,
         image_desc:      game.imageDesc ?? null,
         display_order:   displayOrder ?? 0,
+        pool:            game.pool ?? 'quiz',
         options:         game.options,
         items:           game.type === 'categories' ? null : game.items,
         pairs:           game.pairs,
@@ -1972,6 +2002,7 @@ window.saveQuestionEdit=async function(){
     if(game.pairs)game.pairs.forEach((_,i)=>{const l=document.getElementById('pair-left-'+i),r=document.getElementById('pair-right-'+i);if(l)game.pairs[i].left=l.value;if(r)game.pairs[i].right=r.value;});
     if(game.sentence!==undefined){const sE=document.getElementById('edit-sentence'),bE=document.getElementById('edit-blanks'),wE=document.getElementById('edit-wordbank');if(sE)game.sentence=sE.value;if(bE)game.correctBlanks=bE.value.split('|').map(s=>s.trim());if(wE)game.wordBank=wE.value.split('|').map(s=>s.trim());}
     const expEl=document.getElementById('edit-explanation');if(expEl)game.explanation=expEl.value;
+    const poolEl=document.getElementById('edit-pool');if(poolEl)game.pool=poolEl.value;
 
     // Apply media changes (upload / external URL / delete) for image and video.
     for(const kind of ['image','video']){
@@ -2042,7 +2073,9 @@ window.confirmNewQuestionType=async function(boxIdx,type){
     const tpl=QUESTION_TYPE_TEMPLATES[type];if(!tpl){showCustomAlert('Type inconnu');return;}
     const moduleId=BOXES_DATA[boxIdx].id;
     const newId=`${moduleId}-q${Date.now()}`;
-    const nQ={id:newId,...tpl.shape(),explanation:tpl.shape().explanation||'Explication à compléter.'};
+    // Newly authored questions default to the 'challenge' pool (variety of
+    // 12 types). Trainer can switch to 'quiz' from the editor if needed.
+    const nQ={id:newId,...tpl.shape(),explanation:tpl.shape().explanation||'Explication à compléter.',pool:'challenge'};
     if(window.supa){
         try{
             await window.supa.admin.createQuestion(gameToDbPayload(nQ,moduleId,BOXES_DATA[boxIdx].games.length));
