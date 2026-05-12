@@ -6,8 +6,22 @@
     <title>QCM SSIAP - Challenge Cup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- Firebase Realtime DB compat shim, backed by Supabase. Sets window.firebase. -->
+    <script type="module">
+      import './js/firebase-shim.js';
+      import { supa } from './js/supabase-client.js';
+      window.supa = supa;
+      // Load the question catalogue for all 3 levels and dispatch a ready event.
+      (async () => {
+        const [l1, l2, l3] = await Promise.all([
+          supa.catalogue.modulesForLevel(1),
+          supa.catalogue.modulesForLevel(2),
+          supa.catalogue.modulesForLevel(3),
+        ]);
+        window.BOXES_BY_LEVEL_FROM_DB = { 1: l1, 2: l2, 3: l3 };
+        window.dispatchEvent(new Event('catalogue-ready'));
+      })().catch(e => console.error('[catalogue] load failed', e));
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
         *{font-family:'Poppins',sans-serif;}
@@ -108,6 +122,43 @@
         .trainee-question-text{font-size:1.4rem;font-weight:800;line-height:1.4;color:#1f2937;text-align:center;margin-bottom:1.2rem}
         .trainee-option-text{font-size:1.05rem;font-weight:600;line-height:1.4}
         @media(max-width:640px){.trainee-question-text{font-size:1.15rem}}
+        /* Modules carousel */
+        .boxes-carousel{position:relative;display:flex;align-items:center;justify-content:center;gap:1rem;padding:0 .5rem}
+        .carousel-stage{position:relative;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:380px;perspective:1400px;overflow:hidden}
+        .carousel-arrow{flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);color:white;font-size:2rem;font-weight:bold;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:all .25s;display:flex;align-items:center;justify-content:center;line-height:1}
+        .carousel-arrow:hover{transform:scale(1.08);box-shadow:0 6px 18px rgba(59,130,246,.45)}
+        .carousel-arrow:disabled{opacity:.35;cursor:not-allowed;transform:none}
+        .carousel-card{position:absolute;width:min(360px,80%);transition:transform .55s cubic-bezier(.22,1.12,.62,1.05),opacity .35s,filter .35s;cursor:pointer;will-change:transform,opacity}
+        .carousel-card.pos-center{transform:translateX(0) scale(1);opacity:1;z-index:5;filter:none}
+        .carousel-card.pos-left{transform:translateX(-66%) scale(.78) rotateY(18deg);opacity:.55;z-index:3;filter:blur(.5px)}
+        .carousel-card.pos-right{transform:translateX(66%) scale(.78) rotateY(-18deg);opacity:.55;z-index:3;filter:blur(.5px)}
+        .carousel-card.pos-far-left{transform:translateX(-110%) scale(.6) rotateY(28deg);opacity:0;z-index:1;pointer-events:none}
+        .carousel-card.pos-far-right{transform:translateX(110%) scale(.6) rotateY(-28deg);opacity:0;z-index:1;pointer-events:none}
+        .carousel-card.pos-hidden{transform:translateX(0) scale(.5);opacity:0;z-index:0;pointer-events:none}
+        .carousel-dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:none;cursor:pointer;transition:all .25s;padding:0}
+        .carousel-dot:hover{background:#94a3b8;transform:scale(1.2)}
+        .carousel-dot.active{background:linear-gradient(135deg,#3b82f6,#6366f1);width:32px;border-radius:6px}
+        .carousel-dot.done{background:#10b981;opacity:.7}
+        .carousel-dot.inactive{background:#e5e7eb;opacity:.5}
+        /* Avatar picker (trainee join) */
+        .avatar-btn{font-size:1.7rem;padding:.5rem;border:3px solid transparent;border-radius:.75rem;background:white;cursor:pointer;transition:all .25s;line-height:1}
+        .avatar-btn:hover{transform:scale(1.1)}
+        .avatar-btn.selected{border-color:#3b82f6;background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(99,102,241,.1));box-shadow:0 0 14px rgba(59,130,246,.4);transform:scale(1.08)}
+        /* Buzzer toast (projector) when a team submits */
+        @keyframes buzzer-in{0%{transform:translateX(120%) scale(.7);opacity:0}30%{transform:translateX(-8%) scale(1.08);opacity:1}55%{transform:translateX(0) scale(1)}100%{transform:translateX(0) scale(1);opacity:1}}
+        @keyframes buzzer-out{0%{transform:translateX(0) scale(1);opacity:1}100%{transform:translateX(120%) scale(.85);opacity:0}}
+        #buzzer-stack{position:fixed;top:6rem;right:1.5rem;z-index:60;display:flex;flex-direction:column;gap:.75rem;pointer-events:none}
+        .buzzer-toast{display:flex;align-items:center;gap:.85rem;background:linear-gradient(135deg,#10b981,#0ea5e9);color:white;padding:.75rem 1.25rem;border-radius:9999px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:800;animation:buzzer-in .55s cubic-bezier(.25,1.3,.6,1) forwards;min-width:240px}
+        .buzzer-toast.leaving{animation:buzzer-out .35s ease-in forwards}
+        .buzzer-toast .bz-avatar{font-size:2rem;line-height:1}
+        .buzzer-toast .bz-name{font-size:1.05rem}
+        .buzzer-toast .bz-hint{font-size:.7rem;opacity:.85;font-weight:600}
+        /* Avatar display: photo or emoji */
+        .avatar-img{display:inline-block;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.2);background:#e5e7eb}
+        .avatar-img.av-sm{width:1.5em;height:1.5em;vertical-align:middle}
+        .avatar-img.av-md{width:3rem;height:3rem}
+        .avatar-img.av-lg{width:4rem;height:4rem}
+        #avatar-photo-preview img{width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid #3b82f6;box-shadow:0 4px 14px rgba(59,130,246,.35)}
     </style>
     <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#3B82F6',secondary:'#6366F1'}}}}</script>
 </head>
@@ -155,11 +206,90 @@
             </div>
             <div class="text-center"><span class="inline-block px-4 py-2 bg-white rounded-xl shadow font-bold text-primary" id="level-active-label">🛡️ Niveau actif : SSIAP 1 — Équipier de sécurité</span></div>
         </div>
+        <!-- CONFIGURATION DE LA SESSION -->
+        <div class="glass-morphism rounded-3xl shadow-2xl p-4 mb-6">
+            <button id="config-toggle-btn" class="w-full flex items-center justify-between text-xl font-bold text-gray-800" onclick="toggleSessionConfig()">
+                <span>⚙️ Configuration de la session</span>
+                <span id="config-toggle-icon" class="text-base">▼</span>
+            </button>
+            <div id="session-config-body" class="hidden mt-4 space-y-5">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-bold text-gray-700">📚 Modules à inclure</label>
+                        <div class="flex gap-2">
+                            <button onclick="cfgSetAll('module',true)" class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">✓ Tout cocher</button>
+                            <button onclick="cfgSetAll('module',false)" class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-bold">✗ Tout décocher</button>
+                        </div>
+                    </div>
+                    <div id="cfg-modules-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm"></div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-bold text-gray-700">🎮 Types de jeu autorisés</label>
+                        <div class="flex gap-2">
+                            <button onclick="cfgSetAll('type',true)" class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded text-xs font-bold">✓ Tout cocher</button>
+                            <button onclick="cfgSetAll('type',false)" class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-bold">✗ Tout décocher</button>
+                        </div>
+                    </div>
+                    <div id="cfg-types-list" class="flex flex-wrap gap-2 text-sm"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">📚 Banque</label>
+                        <select id="cfg-pool" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="">Les deux</option>
+                            <option value="challenge">🎯 Challenge (12 types)</option>
+                            <option value="quiz">❓ Quiz pur (QCM)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🎚️ Difficulté</label>
+                        <select id="cfg-difficulty" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="">Toutes</option>
+                            <option value="1">1 — Facile</option>
+                            <option value="2">2 — Moyen</option>
+                            <option value="3">3 — Difficile</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Questions / module</label>
+                        <input type="number" id="cfg-qpb" min="1" max="50" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" value="8">
+                    </div>
+                </div>
+                <!-- Mode libre -->
+                <div class="border-t-2 border-gray-200 pt-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="cfg-libre-toggle" class="w-5 h-5">
+                        <span class="font-bold text-gray-800">🎲 Mode libre</span>
+                        <span class="text-xs text-gray-500">— tirage aléatoire à travers les modules cochés (l'écran modules est sauté)</span>
+                    </label>
+                    <div id="cfg-libre-row" class="hidden mt-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Nombre total de questions</label>
+                        <input type="number" id="cfg-libre-count" min="1" max="200" class="w-full md:w-40 px-3 py-2 border-2 border-purple-300 rounded-lg text-sm" value="20">
+                    </div>
+                </div>
+                <!-- Training Quiz -->
+                <div class="border-t-2 border-gray-200 pt-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="cfg-training-toggle" class="w-5 h-5">
+                        <span class="font-bold text-gray-800">🎓 Training Quiz</span>
+                        <span class="text-xs text-gray-500">— tirage aléatoire dans la banque <strong>quiz pur</strong> uniquement (les modules cochés au-dessus s'appliquent)</span>
+                    </label>
+                    <div id="cfg-training-row" class="hidden mt-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">🔢 Nombre de questions</label>
+                        <input type="number" id="cfg-training-count" min="1" max="200" class="w-full md:w-40 px-3 py-2 border-2 border-emerald-300 rounded-lg text-sm" value="20">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="resetSessionConfig()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm">🔄 Réinitialiser tout</button>
+                </div>
+            </div>
+        </div>
         <!-- QR CODE -->
         <div class="glass-morphism rounded-3xl shadow-2xl p-8 mb-6 text-center">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">📱 Connexion Stagiaires</h3>
-            <div id="qrcode-container" class="inline-block p-4 bg-white rounded-xl mb-4 shadow"></div>
-            <p class="text-sm text-gray-500 mt-2">Scannez le QR code pour rejoindre la session</p>
+            <div id="qrcode-container" class="inline-block p-4 bg-white rounded-xl mb-4 shadow cursor-pointer transition-transform hover:scale-105" onclick="openQrModal()" title="Cliquer pour agrandir"></div>
+            <p class="text-sm text-gray-500 mt-2">Scannez le QR code pour rejoindre la session <span class="text-xs italic">— cliquez pour agrandir</span></p>
             <p class="text-xs text-gray-400 mt-1">Session : <span id="session-id-display" class="font-mono"></span></p>
         </div>
         <!-- ÉQUIPES -->
@@ -173,6 +303,7 @@
             <button id="start-game-btn" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚀 Lancer le Jeu</button>
             <button id="admin-btn" class="px-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">⚙️ Administration</button>
             <button id="reset-game-btn" class="px-8 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🔄 Réinitialiser</button>
+            <button id="logout-btn" class="px-8 bg-gradient-to-r from-gray-500 to-gray-700 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚪 Déconnexion</button>
         </div>
     </div>
 
@@ -189,6 +320,15 @@
             <div id="trainee-level-badge" class="inline-block mb-4 px-4 py-2 ssiap-gradient text-white rounded-full font-bold text-sm">🛡️ SSIAP 1</div>
             <input type="text" id="team-name-input" placeholder="Nom de votre équipe"
                 class="w-full px-4 py-4 rounded-xl border-2 border-gray-300 bg-white text-gray-800 mb-4 text-lg font-bold focus:border-primary focus:outline-none text-center" maxlength="20">
+            <div class="text-xs font-bold text-gray-600 mb-2">Choisissez votre avatar</div>
+            <div id="avatar-picker" class="grid grid-cols-6 gap-2 mb-3"></div>
+            <div class="text-xs font-bold text-gray-500 mb-2">— ou —</div>
+            <div class="mb-4 flex flex-col items-center gap-2">
+                <label for="avatar-photo-input" class="cursor-pointer ssiap-gradient text-white font-bold py-2 px-5 rounded-xl text-sm shadow inline-flex items-center gap-2">📷 Prendre / Choisir une photo</label>
+                <input type="file" id="avatar-photo-input" accept="image/*" capture="user" class="hidden">
+                <div id="avatar-photo-preview" class="hidden mt-1"></div>
+                <button type="button" id="avatar-photo-clear" class="hidden text-xs text-red-600 underline">retirer la photo</button>
+            </div>
             <button id="join-game-btn" class="w-full ssiap-gradient text-white text-xl font-bold py-4 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all">🚀 Rejoindre</button>
         </div>
     </div>
@@ -218,9 +358,14 @@
         <div class="text-center mb-6">
             <h1 class="text-4xl md:text-5xl font-bold text-primary neon-text mb-2">🛡️ Modules SSIAP</h1>
             <div class="inline-block px-4 py-2 ssiap-gradient text-white rounded-full font-bold text-sm mb-4" id="boxes-level-label">SSIAP 1</div>
-            <div class="text-xl text-gray-700">Cliquez sur un module pour lancer les questions</div>
+            <div class="text-xl text-gray-700">Tournez les pages pour choisir un module</div>
         </div>
-        <div id="boxes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8"></div>
+        <div class="boxes-carousel">
+            <button id="boxes-prev" class="carousel-arrow carousel-arrow-left" onclick="boxesCarouselNav(-1)" aria-label="Précédent">‹</button>
+            <div id="boxes-container" class="carousel-stage"></div>
+            <button id="boxes-next" class="carousel-arrow carousel-arrow-right" onclick="boxesCarouselNav(1)" aria-label="Suivant">›</button>
+        </div>
+        <div id="boxes-dots" class="flex justify-center gap-2 mt-6 mb-8"></div>
     </div>
 
     <!-- PROJECTEUR QUESTION -->
@@ -370,6 +515,44 @@
                 <h3 class="text-xl font-bold mb-4 text-gray-800">🏅 Classement Final</h3>
                 <div id="trainee-ranking-final" class="space-y-2"></div>
             </div>
+            <button id="trainee-review-btn" onclick="openTraineeReview()" class="w-full ssiap-gradient text-white text-lg font-bold py-3 rounded-xl shadow-lg">📋 Voir mes réponses</button>
+        </div>
+    </div>
+
+    <!-- MODAL : revue des réponses du stagiaire -->
+    <!-- Modal : choix du type de la nouvelle question -->
+    <div id="new-question-type-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b-2 border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">➕ Choisir le type de question</h3>
+                <button onclick="closeNewQuestionType()" class="w-8 h-8 bg-gray-200 rounded-full font-bold text-gray-600">✕</button>
+            </div>
+            <div id="new-question-type-grid" class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- QR code agrandi (plein écran) -->
+    <div id="qr-fullscreen-modal" class="hidden fixed inset-0 z-[100] bg-black/85 flex flex-col items-center justify-center p-6 cursor-pointer" onclick="closeQrModal()">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+            <div id="qr-fullscreen-container" class="flex items-center justify-center"></div>
+            <div class="text-center mt-4 text-gray-700 font-bold" id="qr-fullscreen-code"></div>
+        </div>
+        <p class="text-white text-lg mt-6">📱 Scannez pour rejoindre la session</p>
+        <p class="text-gray-300 text-sm mt-1">Cliquez n'importe où pour fermer</p>
+    </div>
+
+    <div id="trainee-review-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b-2 border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">📋 Revue de vos réponses</h3>
+                <button onclick="closeTraineeReview()" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full font-bold text-gray-600">✕</button>
+            </div>
+            <div class="flex gap-2 px-4 pt-3 text-xs">
+                <button id="review-tab-all"  onclick="filterTraineeReview('all')"  class="px-3 py-1 bg-blue-500 text-white rounded-full font-bold">Toutes</button>
+                <button id="review-tab-bad"  onclick="filterTraineeReview('bad')"  class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-bold">❌ Mes erreurs</button>
+                <button id="review-tab-good" onclick="filterTraineeReview('good')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full font-bold">✅ Correctes</button>
+            </div>
+            <div id="trainee-review-content" class="overflow-y-auto p-4 flex-1 space-y-3"></div>
         </div>
     </div>
 
@@ -388,7 +571,6 @@
                 <div><label class="block text-lg font-bold text-gray-800 mb-2">Délai de réponse (sec)</label><input type="number" id="question-time" min="10" max="120" value="30" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-800"></div>
                 <div><label class="block text-lg font-bold text-gray-800 mb-2">Points par bonne réponse</label><input type="number" id="points-per-answer" min="10" max="500" value="150" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-800"></div>
                 <div><label class="block text-lg font-bold text-gray-800 mb-2">Bonus vitesse max</label><input type="number" id="speed-bonus" min="10" max="300" value="100" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-800"></div>
-                <div><label class="block text-lg font-bold text-gray-800 mb-2">Questions par module</label><input type="number" id="questions-per-box" min="3" max="20" value="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-800"></div>
             </div>
             <button id="save-settings-btn" class="mt-6 ssiap-gradient text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg">💾 Enregistrer</button>
         </div>
@@ -453,7 +635,7 @@
 </div>
 
 <script>
-const firebaseConfig={apiKey:"AIzaSyCaC1Es9tHcM8l8oCTWoU8jz5riDWTwnJY",authDomain:"mib-challenge-cup.firebaseapp.com",databaseURL:"https://mib-challenge-cup-default-rtdb.europe-west1.firebasedatabase.app",projectId:"mib-challenge-cup",storageBucket:"mib-challenge-cup.firebasestorage.app",messagingSenderId:"281519460435",appId:"1:281519460435:web:1d77901c374fe4570936a6"};
+// Firebase config retired — backend is Supabase via js/firebase-shim.js
 
 /* ════ PICTOGRAMMES ════ */
 const PICTOGRAMS={
@@ -476,6 +658,19 @@ let currentBox=0,currentGameIndex=0;
 let selectedAnswer=null,selectedSequence=[],selectedMultiple=[],selectedRanking=[];
 let fillBlankAnswers=[],categoriesAnswers={},decisionPath=[],selectedCatItem=null;
 let lastTraineeGame=null,openedBoxes=[];
+let traineeAnswerLog=[]; // accumulated for end-of-game review
+const TRAINEE_AVATARS=['🛡️','🚒','👨‍🚒','👩‍🚒','🧯','🔥','⛑️','🦸','🦸‍♀️','🥷','👮','🚨'];
+let selectedAvatar='🛡️';
+let pendingAvatarFile=null; // photo picked but not yet uploaded
+
+// Renders an avatar value (emoji or http URL) as HTML.
+function renderAvatar(avatar,sizeClass='av-md'){
+    const v=avatar||'🛡️';
+    if(typeof v==='string'&&/^https?:\/\//.test(v)){
+        return `<img class="avatar-img ${sizeClass}" src="${v}" alt="avatar">`;
+    }
+    return `<span>${v}</span>`;
+}
 let answersListener=null,timerInterval=null,timeRemaining=30;
 let gameStatusListener=null,currentGameListener=null,questionStartTime=null;
 let editingBox=-1,editingGame=-1,adminCurrentBox=0,adminCurrentLevel=1;
@@ -483,428 +678,36 @@ let matchingLeft=null,matchingRight=null;
 let SELECTED_SSIAP_LEVEL=1;
 const LEVEL_LABELS={1:'🛡️ SSIAP 1 — Équipier de sécurité',2:'🛡️🛡️ SSIAP 2 — Chef d\'équipe',3:'🛡️🛡️🛡️ SSIAP 3 — Chef de service'};
 const LEVEL_SHORT={1:'SSIAP 1',2:'SSIAP 2',3:'SSIAP 3'};
-const SUPERVISOR_PASSWORD='SSIAP2025';
+// Supervisor password is stored bcrypt-hashed in Supabase (table public.supervisors)
+// and verified via the verify_supervisor RPC. No hard-coded fallback.
 let QUESTION_TIME=30,POINTS_PER_ANSWER=150,SPEED_BONUS_MAX=100,SYNC_DELAY=800,QUESTIONS_PER_BOX=8;
 let _logsCache=[],_allLogs=[];
 
 /* ════════════════════════════════════════════
-   DONNÉES QUESTIONS — SSIAP 1
-   12 TYPES DIFFÉRENTS PAR BOX
+   DONNÉES QUESTIONS — chargées depuis Supabase
+   (catalogue-ready event défini dans le head)
    ════════════════════════════════════════════ */
-const BOXES_LEVEL_1=[
-
-/* ══════════════════════ BOX 1 — LE FEU ══════════════════════ */
-{title:'Le Feu',subtitle:'Combustion, classes, propagation',icon:'🔥',color:'from-red-500 to-orange-600',
-games:[
-
-{type:'scenario',title:'Odeur suspecte',
-scenario:'Lors d\'une ronde de nuit, vous sentez une forte odeur de brûlé dans le couloir du 2ème étage. Vous approchez d\'une porte et constatez qu\'elle est chaude au toucher. Aucune fumée visible.',
-question:'Quelle est votre PREMIÈRE action ?',
-options:['Ouvrir la porte pour vérifier l\'intérieur','Ne pas ouvrir — déclencher l\'alarme et alerter le PC de sécurité','Chercher un extincteur avant tout','Appeler vos collègues pour confirmation'],
-correctAnswer:1,
-explanation:'Porte chaude = feu violent possible derrière. On ne l\'ouvre JAMAIS. On déclenche l\'alarme en priorité puis on alerte le PC.'},
-
-{type:'quiz',title:'Tétraèdre du feu',
-question:'Quels sont les 4 éléments du tétraèdre du feu ?',
-options:['Combustible, comburant, énergie d\'activation, réaction en chaîne','Eau, air, terre, feu','Flamme, fumée, chaleur, gaz','Bois, oxygène, chaleur, vent'],
-correctAnswer:0,
-explanation:'Tétraèdre = combustible + comburant (O2) + énergie d\'activation + réaction en chaîne. Supprimer l\'un des 4 éteint le feu.'},
-
-{type:'multiple-select',title:'Facteurs de propagation',
-question:'Quels facteurs ACCÉLÈRENT la propagation d\'un incendie ? (plusieurs réponses)',
-options:['La charge calorifique élevée','La couleur des murs','Les courants d\'air et la ventilation','La géométrie et la hauteur du local','L\'humidité de l\'air faible'],
-correctAnswers:[0,2,3,4],
-explanation:'Charge calorifique ✅, courants d\'air ✅, géométrie ✅, air sec ✅. La couleur des murs n\'a aucun impact sur la propagation ❌.'},
-
-{type:'find-intruder',title:'Classe de feu inexistante',
-question:'Parmi ces classes de feu, laquelle N\'EXISTE PAS dans la nomenclature européenne actuelle ?',
-options:['Classe A — feux de solides','Classe B — feux de liquides','Classe E — feux d\'installations électriques','Classe F — feux d\'huiles de cuisson'],
-correctAnswer:2,
-explanation:'La classe E n\'existe plus depuis la révision européenne. Classes valides : A (solides), B (liquides), C (gaz), D (métaux), F (huiles cuisson).'},
-
-{type:'true-false',title:'Fumée et mortalité',
-question:'La fumée est la principale cause de décès lors d\'un incendie, avant les brûlures directes.',
-options:['Vrai','Faux'],
-correctAnswer:0,
-explanation:'VRAI — 80% des victimes meurent d\'intoxication aux fumées (CO, HCN, CO2...) avant d\'être atteintes par les flammes. Les fumées désorientation et provoquent la perte de conscience.'},
-
-{type:'matching',title:'Agents extincteurs',
-question:'Associez chaque agent extincteur à son mode d\'action principal :',
-pairs:[{left:'Eau pulvérisée',right:'Refroidissement'},{left:'CO2',right:'Étouffement (chasse O2)'},{left:'Poudre ABC',right:'Inhibition chimique'},{left:'Mousse',right:'Étouffement + refroidissement'}],
-explanation:'Eau = refroidit la base. CO2 = chasse l\'oxygène. Poudre = interrompt la réaction en chaîne. Mousse = double action couvrant + refroidissant.'},
-
-{type:'sequence',title:'Phases d\'un incendie',
-question:'Remettez dans l\'ordre chronologique les phases de développement d\'un incendie :',
-items:['Feu naissant (< 1m²)','Phase de développement (flammes vives)','Embrasement généralisé — flashover','Phase de décrescence'],
-correctOrder:[0,1,2,3],
-explanation:'Naissance → Développement → Flashover (500°C au plafond) → Décrescence. Le flashover est le point de non-retour : tous les matériaux s\'enflamment simultanément.'},
-
-{type:'fill-blank',title:'Réaction et résistance',
-question:'Complétez ces deux notions fondamentales :',
-sentence:'La %1% d\'un matériau évalue sa participation à la naissance et au développement du feu, tandis que la %2% évalue la durée pendant laquelle il conserve sa fonction.',
-correctBlanks:['réaction au feu','résistance au feu'],
-wordBank:['réaction au feu','résistance au feu','conductivité','inflammabilité','opacité','résistance mécanique'],
-explanation:'Réaction = comment le matériau se comporte face à une flamme (classement Euroclasses A à F). Résistance = durée en minutes/heures où la structure tient (REI 30, 60, 120...).'},
-
-{type:'ranking',title:'Résistance des matériaux',
-question:'Classez ces matériaux du PLUS résistant au MOINS résistant face au feu :',
-items:['Béton armé avec protection','Brique réfractaire pleine','Bois lamellé collé (carbonisation lente)','Acier nu sans protection'],
-correctOrder:[0,1,2,3],
-explanation:'Béton > Brique > Bois (carbonise mais reste porteur un moment) > Acier nu (perd 50% de sa résistance dès 400-600°C).'},
-
-{type:'categories',title:'Extincteur adapté',
-question:'Classez ces agents extincteurs selon leur utilisation sur un feu d\'origine électrique :',
-categories:[{id:'ok',label:'✅ Utilisable sur feu électrique'},{id:'nok',label:'❌ INTERDIT sur feu électrique'}],
-items:[{text:'CO2',category:'ok'},{text:'Poudre ABC (sèche)',category:'ok'},{text:'Eau jet plein',category:'nok'},{text:'Eau pulvérisée conductrice',category:'nok'},{text:'Mousse',category:'nok'}],
-explanation:'CO2 ✅ et Poudre ✅ = non conducteurs. Eau jet plein ❌, eau pulvérisée conductrice ❌, mousse ❌ = risque d\'électrocution grave.'},
-
-{type:'image-identify',imageKey:'electrical-hazard',imageDesc:'ISO 7010 — W012',
-title:'Panneau triangulaire jaune',
-question:'Ce panneau triangulaire jaune signale :',
-options:['Un moyen de lutte incendie à proximité','Un danger électrique — zone à risque','Un défibrillateur accessible','Une coupure d\'urgence électricité'],
-correctAnswer:1,
-explanation:'Triangle jaune ISO 7010 W012 = AVERTISSEMENT danger électrique. Présence de tension dangereuse. Ne jamais intervenir sans habilitation électrique.'},
-
-{type:'decision',title:'Découverte d\'incendie',
-scenario:'Vous êtes en patrouille. Vous découvrez de la fumée qui sort sous la porte d\'un local technique. La porte est tiède. Vous êtes seul.',
-question:'Arbre de décision — étape par étape :',
-steps:[
-{question:'ÉTAPE 1 — Que faites-vous en premier ?',options:[{text:'Ouvrir pour voir l\'étendue du feu',nextStep:99},{text:'Déclencher l\'alarme et appeler le PC sécurité',nextStep:1},{text:'Prendre un extincteur avant tout',nextStep:99}]},
-{question:'ÉTAPE 2 — La porte est tiède (pas chaude). Pouvez-vous intervenir ?',options:[{text:'Non, évacuer sans intervenir',nextStep:99},{text:'Oui si feu naissant, sortie dans le dos, extincteur adapté',nextStep:2},{text:'Oui toujours, c\'est mon rôle',nextStep:99}]},
-{question:'ÉTAPE 3 — L\'extincteur est vide après 15 secondes, le feu progresse. Que faites-vous ?',options:[{text:'Continuer avec les mains',nextStep:null},{text:'Abandonner l\'intervention, évacuer, fermer la porte',nextStep:null},{text:'Attendre les pompiers sur place',nextStep:null}]}
-],
-correctPath:[1,1,1],
-explanation:'Alarme en 1er → Intervention si feu petit et sortie disponible → Abandon si le feu prend de l\'ampleur. La vie prime sur les biens.'},
-
-{type:'true-false',title:'Backdraft vs Flashover',
-question:'Le backdraft et le flashover sont deux noms différents pour désigner le même phénomène.',
-options:['Vrai','Faux'],
-correctAnswer:1,
-explanation:'FAUX — Backdraft = explosion due à un apport soudain d\'oxygène dans un local enfumé. Flashover = embrasement généralisé par montée en température (500°C au plafond). Deux phénomènes distincts et tous deux mortels.'},
-
-{type:'scenario',title:'Choix de l\'extincteur',
-scenario:'Dans la salle serveur, un câble électrique prend feu. Vous disposez d\'un extincteur à eau pulvérisée non additif et d\'un extincteur CO2. Les flammes font 40 cm de haut.',
-question:'Quel extincteur utilisez-vous et pourquoi ?',
-options:['L\'eau pulvérisée — elle refroidit bien','Le CO2 — non conducteur, adapté aux feux électriques','Les deux ensemble pour plus d\'efficacité','Ni l\'un ni l\'autre — évacuer sans intervenir'],
-correctAnswer:1,
-explanation:'CO2 = agent non conducteur, idéal pour les locaux électriques/informatiques. L\'eau conduit l\'électricité → risque d\'électrocution. Exception : eau pulvérisée avec additif anti-électrostatique (vérifier le marquage "feux électriques").'}
-]},
-
-/* ══════════════════════ BOX 2 — ERP & IGH ══════════════════════ */
-{title:'ERP & IGH',subtitle:'Réglementation, classification, obligations',icon:'🏛️',color:'from-blue-600 to-indigo-700',
-games:[
-
-{type:'quiz',title:'Classification ERP',
-question:'Un ERP est classé selon deux critères principaux. Lesquels ?',
-options:['La hauteur des bâtiments et leur surface','L\'activité exercée (type) et l\'effectif maximal accueilli (catégorie)','La date de construction et le nombre d\'étages','La commune et la distance aux secours'],
-correctAnswer:1,
-explanation:'Type = lettre selon l\'activité (M=magasin, R=enseignement, O=hôtel...). Catégorie = de 1 à 5 selon l\'effectif. Ces deux critères déterminent toutes les obligations réglementaires.'},
-
-{type:'scenario',title:'Travaux et SSI',
-scenario:'Des travaux de rénovation prévoient d\'ouvrir une trémie de 0,5m² dans un plancher coupe-feu 1h30 pour faire passer des câbles. Le chef de chantier dit que c\'est "un petit percement sans importance".',
-question:'Quelle est la bonne conduite à tenir ?',
-options:['Accepter les travaux — c\'est effectivement mineur','Exiger un permis de feu et une demande d\'autorisation à la commission de sécurité avant tout début','Autoriser à condition de reboucher immédiatement après','Appeler les pompiers pour avis verbal'],
-correctAnswer:1,
-explanation:'Toute modification impactant la sécurité incendie (structure CF, SSI) nécessite une autorisation préalable de la commission. Le permis de feu est obligatoire pour les travaux par points chauds.'},
-
-{type:'find-intruder',title:'Type ERP inexistant',
-question:'Parmi ces types d\'ERP, lequel N\'EXISTE PAS dans la réglementation française ?',
-options:['Type M — Magasins et centres commerciaux','Type O — Hôtels et pensions de famille','Type Z — Zones industrielles et entrepôts','Type U — Établissements de soins'],
-correctAnswer:2,
-explanation:'Le type Z n\'existe pas. Les vrais types vont de J à Y : J(personnes âgées), L(salles), M(magasins), N(restaurants), O(hôtels), P(dancings), R(enseignement), S(bibliothèques), T(expo), U(soins), V(culte), W(bureaux), X(sports), Y(musées).'},
-
-{type:'true-false',title:'IGH habitation',
-question:'Un immeuble d\'habitation est classé IGH dès que le plancher bas du dernier niveau habité dépasse 28 mètres.',
-options:['Vrai','Faux'],
-correctAnswer:1,
-explanation:'FAUX — Seuil IGH habitation = 50 mètres. Le seuil de 28 m s\'applique aux IGH à usage de bureaux, hôtels, établissements d\'enseignement. Ces seuils conditionnent des exigences très renforcées.'},
-
-{type:'matching',title:'Classes IGH',
-question:'Associez chaque sigle IGH à son usage :',
-pairs:[{left:'GHA',right:'Habitation'},{left:'GHO',right:'Hôtels et résidences'},{left:'GHW',right:'Bureaux'},{left:'GHU',right:'Établissements sanitaires'}],
-explanation:'GHA=habitation (>50m), GHO=hôtels, GHW=bureaux, GHU=sanitaire, GHR=enseignement, GHS=archives, GHZ=mixte. Le code GH + lettre = type d\'usage.'},
-
-{type:'multiple-select',title:'Obligations IGH',
-question:'Quelles obligations sont SPÉCIFIQUES aux IGH ? (plusieurs réponses)',
-options:['Service de sécurité SSIAP 24h/24 et 7j/7','Compartimentage maximum 2 500 m² sur 3 niveaux','SSI de catégorie A obligatoire','Exercice d\'évacuation trimestriel','Colonnes en charge (humides) aux étages'],
-correctAnswers:[0,1,2,4],
-explanation:'SSIAP 24h/24 ✅, compartimentage ✅, SSI cat.A ✅, colonnes humides ✅. L\'exercice trimestriel n\'est pas une obligation spécifique IGH — 2 fois/an en ERP courant.'},
-
-{type:'sequence',title:'Instruction dossier ERP',
-question:'Remettez dans l\'ordre les étapes d\'instruction d\'une demande d\'ouverture d\'ERP :',
-items:['Dépôt du dossier (notice sécurité + plans)','Instruction technique par les services','Visite et avis de la commission de sécurité','Délivrance de l\'autorisation d\'ouverture par le maire'],
-correctOrder:[0,1,2,3],
-explanation:'Sans avis FAVORABLE de la commission, le maire ne peut pas délivrer l\'autorisation. Un avis défavorable = fermeture administrative possible.'},
-
-{type:'fill-blank',title:'Compartimentage IGH',
-question:'Complétez la règle de compartimentage des IGH :',
-sentence:'Dans un IGH, chaque compartiment ne doit pas dépasser %1% m² de surface et %2% niveaux en superposition.',
-correctBlanks:['2500','3'],
-wordBank:['2500','3','5000','2','1000','4','1500','6'],
-explanation:'Article GH 10 : 2 500 m² max et 3 niveaux max par compartiment. Les parois délimitatives doivent être CF 2h minimum.'},
-
-{type:'ranking',title:'Fréquence des visites de commission',
-question:'Classez ces catégories d\'ERP par fréquence de visite (de la plus fréquente à la moins fréquente) :',
-items:['1ère catégorie — visite annuelle','2ème catégorie — visite annuelle','3ème catégorie — visite tous les 2 ans','4ème catégorie — visite tous les 3 ans'],
-correctOrder:[0,1,2,3],
-explanation:'1ère et 2ème cat. = annuelle. 3ème cat. = tous les 2 ans. 4ème cat. = tous les 3 ans. La 5ème catégorie est dispensée de passage en commission sauf lors de l\'ouverture.'},
-
-{type:'categories',title:'Documents ERP',
-question:'Classez ces documents selon leur caractère obligatoire en ERP :',
-categories:[{id:'obligatoire',label:'📌 Obligatoire réglementairement'},{id:'non',label:'💡 Utile mais non obligatoire'}],
-items:[{text:'Registre de sécurité',category:'obligatoire'},{text:'Notice descriptive de sécurité',category:'obligatoire'},{text:'Plan de masse à jour',category:'obligatoire'},{text:'Catalogue équipements',category:'non'},{text:'Revue professionnelle incendie',category:'non'}],
-explanation:'Registre ✅, Notice ✅, Plans ✅ = obligatoires. Les catalogues et revues ont une valeur documentaire mais ne sont pas des obligations réglementaires.'},
-
-{type:'image-identify',imageKey:'assembly',imageDesc:'ISO 7010 — E007',
-title:'Panneau vert personnes',
-question:'Ce pictogramme vert représente :',
-options:['Une zone de repos pour le personnel','Le point de rassemblement après évacuation','Un vestiaire collectif','Un accès réservé aux secours'],
-correctAnswer:1,
-explanation:'ISO 7010 E007 = Point de rassemblement. Lieu où tous les occupants doivent se regrouper après évacuation pour permettre le comptage et informer les secours.'},
-
-{type:'decision',title:'Registre non tenu',
-scenario:'Vous prenez votre poste de SSIAP. En consultant le registre de sécurité, vous constatez qu\'il n\'a pas été rempli depuis 5 semaines et que plusieurs vérifications périodiques ne sont pas documentées.',
-question:'Quelle est la marche à suivre ?',
-steps:[
-{question:'ÉTAPE 1 — Première action immédiate ?',options:[{text:'Remplir les dates manquantes rétrospectivement',nextStep:99},{text:'Documenter l\'état des lacunes et alerter la hiérarchie',nextStep:1},{text:'Attendre la prochaine commission pour signaler',nextStep:99}]},
-{question:'ÉTAPE 2 — Les rapports de vérification technique (extincteurs, SSI) sont absents.',options:[{text:'Inventer des données vraisemblables',nextStep:99},{text:'Contacter les entreprises de maintenance pour obtenir les copies',nextStep:2},{text:'Signaler à la commission sans attendre',nextStep:99}]},
-{question:'ÉTAPE 3 — Une vérification annuelle d\'extincteurs est dépassée de 2 mois.',options:[{text:'Programmer immédiatement la vérification et consigner dans le registre',nextStep:null},{text:'Attendre que quelqu\'un s\'en aperçoive',nextStep:null},{text:'Fermer l\'établissement',nextStep:null}]}
-],
-correctPath:[1,1,0],
-explanation:'Signaler → Rechercher les preuves existantes → Programmer les vérifications manquantes. La falsification de registre est une infraction pénale.'},
-
-{type:'true-false',title:'Permis de feu',
-question:'Dans un ERP, le permis de feu peut être accordé verbalement si le responsable sécurité est présent.',
-options:['Vrai','Faux'],
-correctAnswer:1,
-explanation:'FAUX — Le permis de feu (GN13) est TOUJOURS écrit, daté, signé des deux parties (donneur d\'ordre + exécutant). Aucune exception. Un permis verbal n\'a aucune valeur juridique.'},
-
-{type:'scenario',title:'Commission de sécurité',
-scenario:'La commission de sécurité émet un avis défavorable lors de la visite périodique d\'un ERP de 1ère catégorie. Le directeur affirme que la commission "n\'a pas le pouvoir de fermer".',
-question:'Le directeur a-t-il raison ?',
-options:['Oui — la commission ne fait que des recommandations','Non — un avis défavorable peut entraîner une fermeture administrative par le maire','Oui — seuls les tribunaux peuvent fermer un ERP','Non — c\'est la préfecture qui décide directement'],
-correctAnswer:1,
-explanation:'La commission émet un avis (favorable ou défavorable). En cas d\'avis défavorable, le maire PEUT prendre un arrêté de fermeture. C\'est le maire qui décide, mais il engage sa responsabilité en maintenant ouvert un ERP dangereux.'},
-
-{type:'image-identify',imageKey:'exit-direction',imageDesc:'ISO 7010 — E003',
-title:'Flèche verte personnage',
-question:'Ce panneau vert avec personnage et flèche indique :',
-options:['Le sens de circulation habituel','La direction vers une issue de secours','Le poste de premiers secours','L\'accès au stationnement'],
-correctAnswer:1,
-explanation:'ISO 7010 E003 = Direction vers une issue de secours. Ces panneaux jalonnent tout le cheminement d\'évacuation. Ils doivent être visibles en permanence, de jour comme de nuit (rétro-éclairés ou luminescents).'}
-]},
-
-/* ══════════════════════ BOX 3 — MOYENS DE SECOURS ══════════════════════ */
-{title:'Moyens de Secours',subtitle:'SSI, extincteurs, RIA, colonnes sèches',icon:'🧯',color:'from-cyan-500 to-blue-600',
-games:[
-
-{type:'scenario',title:'Alarme SSI — levée de doute',
-scenario:'Le tableau de signalisation affiche "ALARME FEU — Zone 12 — Sous-sol parking" depuis 2 minutes. Vous regardez les caméras de surveillance : aucune fumée visible. Votre responsable vous demande de réarmer immédiatement "pour ne pas déranger".',
-question:'Quelle est la procédure correcte ?',
-options:['Réarmer comme demandé — c\'est sûrement un défaut technique','Refuser, effectuer une levée de doute physique et consigner l\'événement','Appeler les pompiers sans rien faire d\'autre','Inhiber la zone 12 pour éviter les fausses alarmes'],
-correctAnswer:1,
-explanation:'Toute alarme = levée de doute obligatoire avant réarmement. Réarmer sans vérification = faute professionnelle grave pouvant engager la responsabilité pénale. L\'ordre hiérarchique ne supplante pas la procédure réglementaire.'},
-
-{type:'quiz',title:'Signification SSI',
-question:'Que désigne l\'acronyme SSI ?',
-options:['Service de Sécurité Incendie','Système de Sécurité Incendie','Surveillance et Sécurité des Installations','Système de Signalisation Intégrée'],
-correctAnswer:1,
-explanation:'SSI = Système de Sécurité Incendie (norme NF S 61-931). Il comprend le SDI (Système de Détection Incendie) et le SMSI (Système de Mise en Sécurité Incendie).'},
-
-{type:'true-false',title:'CO2 et feu de friture',
-question:'Un extincteur CO2 peut être utilisé sur un feu de friture (classe F) car il étouffe les flammes.',
-options:['Vrai','Faux'],
-correctAnswer:1,
-explanation:'FAUX — Le CO2 est DANGEREUX sur les feux de classe F. La pression du jet peut projeter l\'huile bouillante et provoquer un embrasement violent (explosion d\'huile). Seuls les extincteurs homologués pour classe F (à eau avec additif) conviennent.'},
-
-{type:'find-intruder',title:'Ce qui n\'est pas un DAS',
-question:'Parmi ces équipements, lequel N\'EST PAS un Dispositif Actionné de Sécurité (DAS) ?',
-options:['Porte coupe-feu à fermeture automatique','Volet de désenfumage motorisé','Déclencheur Manuel d\'alarme (boîtier rouge)','Clapet coupe-feu dans une gaine de ventilation'],
-correctAnswer:2,
-explanation:'Le DM (Déclencheur Manuel) est un dispositif d\'ENTRÉE du SDI — il déclenche l\'alarme. Les DAS sont des dispositifs de SORTIE du SMSI — ils agissent : portes CF, volets, clapets, exutoires de désenfumage.'},
-
-{type:'matching',title:'Extincteur adapté au feu',
-question:'Associez chaque type de feu à l\'extincteur le plus adapté :',
-pairs:[{left:'Feu de bois et papier (classe A)',right:'Eau pulvérisée'},{left:'Feu d\'installation électrique',right:'CO2'},{left:'Feu de liquide (classe B)',right:'Mousse'},{left:'Feu polyvalent A+B+C',right:'Poudre ABC'}],
-explanation:'Eau = refroidit les feux solides. CO2 = non conducteur pour l\'électrique. Mousse = étouffement sur liquides. Poudre ABC = polyvalent mais salissant et dégrade le matériel électronique.'},
-
-{type:'sequence',title:'Catégories de SSI',
-question:'Classez les catégories de SSI de la PLUS COMPLÈTE à la PLUS SIMPLE :',
-items:['Catégorie A : détection totale + toutes fonctions sécurité','Catégorie B : détection partielle + toutes fonctions sécurité','Catégorie C : alarme générale sans détection auto','Catégorie E : alarme générale seule'],
-correctOrder:[0,1,2,3],
-explanation:'A (obligatoire IGH et ERP à sommeil important) → B → C → D (alarme + compartimentage partiel) → E (alarme seule). La catégorie A est la plus complète et la plus sûre.'},
-
-{type:'multiple-select',title:'Vérifications extincteurs',
-question:'Quelles vérifications sont OBLIGATOIRES pour les extincteurs portatifs ? (plusieurs réponses)',
-options:['Contrôle visuel mensuel par l\'exploitant','Vérification technique annuelle par organisme agréé','Épreuve hydraulique tous les 5 ans','Remplacement automatique tous les 3 ans','Vérification du plombage et de l\'indicateur de pression'],
-correctAnswers:[0,1,4],
-explanation:'Contrôle visuel mensuel ✅, vérif. annuelle agréée ✅, plombage et pression ✅. L\'épreuve hydraulique est tous les 10 ans ❌. Le remplacement systématique tous les 3 ans n\'est pas une obligation réglementaire ❌.'},
-
-{type:'fill-blank',title:'Colonnes d\'incendie',
-question:'Complétez la distinction fondamentale :',
-sentence:'La %1% est une canalisation vide alimentée en eau par les pompiers à l\'arrivée. La %2% est maintenue sous pression en permanence par des surpresseurs avec des RIA à chaque étage.',
-correctBlanks:['colonne sèche','colonne humide'],
-wordBank:['colonne sèche','colonne humide','colonne montante','RIA','sprinkler','tuyau d\'attaque'],
-explanation:'Colonne sèche : obligatoire dès 18m de hauteur de plancher bas. Colonne humide : obligatoire en IGH et grands ERP. La colonne humide offre une intervention immédiate sans attendre les pompiers.'},
-
-{type:'ranking',title:'Ordre d\'intervention extinction',
-question:'Classez ces moyens d\'extinction par ordre d\'intervention (du PREMIER déclenché au DERNIER) :',
-items:['Sprinkler — déclenchement automatique dès 68°C','Extincteur portatif — première intervention humaine','RIA DN19/25 — deuxième intervention humaine','Colonne sèche ou humide — intervention des sapeurs-pompiers'],
-correctOrder:[0,1,2,3],
-explanation:'Sprinkler (automatique dès le départ de feu) → Extincteur (feu naissant) → RIA (feu développé) → Colonne (feu important avec sapeurs-pompiers). Chaque moyen correspond à une ampleur croissante du sinistre.'},
-
-{type:'categories',title:'SDI ou SMSI',
-question:'Classez ces équipements dans leur sous-système SSI :',
-categories:[{id:'sdi',label:'🔍 SDI — Système de Détection'},{id:'smsi',label:'⚡ SMSI — Mise en Sécurité'}],
-items:[{text:'Détecteur optique de fumée',category:'sdi'},{text:'Déclencheur Manuel (DM)',category:'sdi'},{text:'CMSI (Centralisateur)',category:'smsi'},{text:'Volet de désenfumage',category:'smsi'},{text:'ECS (Équipement de Contrôle)',category:'sdi'},{text:'Porte coupe-feu motorisée',category:'smsi'}],
-explanation:'SDI = Détecte et signale : détecteurs automatiques, DM, ECS, ECSAV. SMSI = Agit sur l\'environnement : CMSI + tous les DAS (portes CF, volets, clapets, exutoires).'},
-
-{type:'image-identify',imageKey:'extinguisher',imageDesc:'ISO 7010 — F001',
-title:'Panneau rouge extincteur',
-question:'Ce panneau carré rouge avec un extincteur blanc indique :',
-options:['Un local à risque d\'incendie','L\'emplacement d\'un extincteur portatif','Un poste de premiers secours','Une sortie de secours équipée'],
-correctAnswer:1,
-explanation:'ISO 7010 F001 = Emplacement d\'un extincteur. Carré rouge = matériel de lutte incendie. Il doit être visible à 15 mètres maximum. L\'extincteur doit être accessible sans obstacle.'},
-
-{type:'decision',title:'Anomalie sprinkler',
-scenario:'Une alarme "Manque de pression réseau sprinkler" s\'affiche sur le tableau de bord du PC sécurité. Il est 23h00, l\'établissement est ouvert avec 150 personnes.',
-question:'Procédure de gestion de la défaillance :',
-steps:[
-{question:'ÉTAPE 1 — Première action ?',options:[{text:'Réarmer l\'alarme et attendre le matin',nextStep:99},{text:'Alerter la hiérarchie et contacter l\'astreinte technique',nextStep:1},{text:'Évacuer immédiatement l\'établissement',nextStep:99}]},
-{question:'ÉTAPE 2 — En attendant l\'intervention technique (délai 30 min) ?',options:[{text:'Ne rien faire — 30 min c\'est court',nextStep:99},{text:'Mettre en place des rondes renforcées dans les zones concernées',nextStep:2},{text:'Couper le réseau sprinkler pour éviter les faux déclenchements',nextStep:99}]},
-{question:'ÉTAPE 3 — L\'anomalie est consignée. Que faire avant de quitter votre poste ?',options:[{text:'Consigner dans le registre de sécurité et la main courante, transmettre à la relève',nextStep:null},{text:'Mettre seulement un post-it sur l\'écran',nextStep:null},{text:'Rien — la maintenance a géré',nextStep:null}]}
-],
-correctPath:[1,1,0],
-explanation:'Alerter → Mesures compensatoires (rondes) → Traçabilité complète (main courante + registre + transmission à la relève). Le sprinkler en panne = risque majeur → surveillance renforcée.'},
-
-{type:'quiz',title:'Inhibition de zone SSI',
-question:'Qu\'est-ce qu\'une "inhibition de zone" dans un SSI ?',
-options:['Le déclenchement volontaire d\'une alarme pour test','La désactivation temporaire d\'une zone de détection pour travaux','La mise en service d\'une nouvelle zone après installation','La réinitialisation complète du système après alarme'],
-correctAnswer:1,
-explanation:'Inhibition = mise hors service temporaire d\'une zone (travaux, maintenance). Nécessite un niveau d\'accès 2 minimum, une documentation écrite et des mesures compensatoires (rondes, surveillance humaine renforcée).'},
-
-{type:'true-false',title:'Test mensuel BAES',
-question:'Un BAES (Bloc Autonome d\'Éclairage de Sécurité) doit obligatoirement être testé tous les mois par l\'exploitant.',
-options:['Vrai','Faux'],
-correctAnswer:0,
-explanation:'VRAI — Le test mensuel (appui sur le bouton "test" : vérification de l\'allumage) est obligatoire. Un contrôle annuel approfondi (autonomie, état de la batterie) doit être réalisé par un technicien qualifié.'},
-
-{type:'image-identify',imageKey:'ria',imageDesc:'Panneau réglementaire RIA',
-title:'Panneau RIA',
-question:'Ce panneau rouge circulaire avec tuyau indique l\'emplacement d\'un :',
-options:['Extincteur portatif','Robinet d\'Incendie Armé (RIA)','Poste de premiers secours','Point d\'alimentation colonne sèche'],
-correctAnswer:1,
-explanation:'RIA = Robinet d\'Incendie Armé. Équipement de 2ème intervention composé d\'un robinet, un dévidoir et un tuyau semi-rigide. Toujours en eau. Nécessite une formation avant utilisation. Portée 15-20 mètres.'}
-]},
-
-/* ══════════════════════ BOX 4 — ÉVACUATION & ORGANISATION ══════════════════════ */
-{title:'Évacuation & Organisation',subtitle:'Dégagements, rôles, exercices',icon:'🚪',color:'from-emerald-500 to-teal-600',
-games:[
-
-{type:'scenario',title:'Serre-file face à un récalcitrant',
-scenario:'Lors d\'une évacuation déclenchée par l\'alarme, vous êtes serre-file au 3ème étage. Un cadre supérieur refuse d\'évacuer et dit : "Je suis en réunion importante, c\'est encore une fausse alarme".',
-question:'Quelle est votre action correcte ?',
-options:['Le laisser — vous ne pouvez pas forcer un supérieur hiérarchique','Tenter de le convaincre, si refus noter son identité et prévenir le responsable d\'évacuation','L\'escorter physiquement de force','Continuer sans lui — c\'est son problème'],
-correctAnswer:1,
-explanation:'Le serre-file tente de convaincre fermement. Si refus persistant : noter son identité, localisation précise, et en informer immédiatement le responsable d\'évacuation et les pompiers à l\'arrivée. Ne jamais abandonner sans signaler.'},
-
-{type:'quiz',title:'Unité de passage',
-question:'Quelle est la largeur d\'une Unité de Passage (UP) réglementaire en ERP ?',
-options:['0,40 m','0,60 m','0,80 m','1,00 m'],
-correctAnswer:1,
-explanation:'1 UP = 0,60 m. Les dégagements sont calculés en nombre d\'UP selon l\'effectif. Ex : une porte de 0,90 m = 1 UP. Une largeur de 1,40 m = 2 UP. Ces calculs garantissent un débit d\'évacuation suffisant.'},
-
-{type:'find-intruder',title:'Action correcte en évacuation',
-question:'Lequel de ces comportements est CORRECT lors d\'une évacuation d\'urgence ?',
-options:['Prendre l\'ascenseur pour gagner du temps','Retourner chercher son manteau et son téléphone','Se rendre calmement au point de rassemblement','Ouvrir toutes les portes coupe-feu pour faciliter le passage'],
-correctAnswer:2,
-explanation:'Se rendre calmement au point de rassemblement ✅. Ascenseur ❌ (risque de coupure). Retourner ❌ (risque mortel). Ouvrir les portes CF ❌ (laissent passer le feu et la fumée, elles doivent RESTER FERMÉES).'},
-
-{type:'true-false',title:'Sens d\'ouverture des portes',
-question:'Une porte de sortie desservant plus de 50 personnes doit obligatoirement s\'ouvrir dans le sens de l\'évacuation.',
-options:['Vrai','Faux'],
-correctAnswer:0,
-explanation:'VRAI — Article CO 44 : dès 50 personnes, porte obligatoirement dans le sens de la sortie pour éviter l\'effet de bouchon lors d\'une bousculade. En dessous de 50, les deux sens sont autorisés.'},
-
-{type:'matching',title:'Rôles lors de l\'évacuation',
-question:'Associez chaque acteur à sa mission principale lors de l\'évacuation :',
-pairs:[{left:'Guide-file',right:'Ouvre la marche et guide vers la sortie'},{left:'Serre-file',right:'Ferme la marche, vérifie les locaux, ferme les portes'},{left:'Agent SSIAP',right:'Coordonne l\'évacuation et accueille les secours'},{left:'Responsable d\'évacuation',right:'Décide et supervise l\'ensemble du dispositif'}],
-explanation:'Guide-file = en tête de groupe. Serre-file = en queue, dernier sorti, portes fermées. SSIAP = interface avec les pompiers (plans, clés). Responsable = autorité de décision.'},
-
-{type:'sequence',title:'Procédure d\'alerte',
-question:'Remettez dans l\'ordre les étapes de la procédure d\'alerte en cas d\'incendie découvert :',
-items:['Découvrir ou constater le sinistre','Déclencher le Déclencheur Manuel d\'alarme le plus proche','Alerter les sapeurs-pompiers (18 ou 112)','Accueillir et guider les secours à leur arrivée'],
-correctOrder:[0,1,2,3],
-explanation:'Découverte → Alarme (pour évacuer tout le monde) → Alerte secours (18/112) → Accueil des pompiers avec plan, clés, informations. L\'alarme AVANT l\'alerte externe.'},
-
-{type:'multiple-select',title:'Éclairage de sécurité',
-question:'Quels équipements font partie du système d\'éclairage de sécurité réglementaire ? (plusieurs réponses)',
-options:['BAES (Bloc Autonome d\'Éclairage de Sécurité)','Néon fluorescent standard alimenté secteur','Éclairage d\'ambiance anti-panique','Source centralisée sur batteries avec luminaires déportés','BAAS (Bloc Autonome d\'Alarme Sonore)'],
-correctAnswers:[0,2,3],
-explanation:'BAES ✅, éclairage d\'ambiance/anti-panique ✅, source centralisée ✅. Néon secteur ❌ (s\'éteint en coupure). BAAS ❌ = alarme sonore, pas éclairage.'},
-
-{type:'fill-blank',title:'Autonomie éclairage',
-question:'Complétez les exigences réglementaires sur l\'éclairage de sécurité :',
-sentence:'L\'éclairage de sécurité doit fonctionner au minimum %1% heure en cas de coupure et doit s\'allumer automatiquement dès la perte de l\'alimentation %2%.',
-correctBlanks:['1','normale'],
-wordBank:['1','normale','2','secours','3','principale'],
-explanation:'1 heure minimum d\'autonomie sur batteries intégrées (BAES). Allumage automatique dès coupure secteur. Permet l\'évacuation en toute sécurité même lors d\'une coupure électrique totale.'},
-
-{type:'ranking',title:'Phases de l\'évacuation',
-question:'Classez ces phases dans l\'ordre chronologique correct d\'une évacuation réussie :',
-items:['Déclenchement du signal d\'alarme sonore','Évacuation guidée des occupants par les guides-files','Comptage et appel au point de rassemblement','Retour autorisé uniquement par les sapeurs-pompiers'],
-correctOrder:[0,1,2,3],
-explanation:'Alarme → Évacuation ordonnée → Comptage (vérifier que personne ne manque) → Retour exclusivement après feu maître. Ne JAMAIS retourner sans autorisation des pompiers.'},
-
-{type:'categories',title:'Actions lors de l\'évacuation',
-question:'Classez ces comportements lors de l\'évacuation :',
-categories:[{id:'ok',label:'✅ À faire impérativement'},{id:'nok',label:'🚫 Strictement interdit'}],
-items:[{text:'Déclencher le DM en quittant son poste',category:'ok'},{text:'Fermer la porte de son bureau derrière soi',category:'ok'},{text:'Prendre l\'ascenseur pour les étages supérieurs',category:'nok'},{text:'Rejoindre le point de rassemblement désigné',category:'ok'},{text:'Retourner récupérer un document urgent',category:'nok'}],
-explanation:'Déclencher le DM ✅, fermer les portes ✅ (ralentit le feu), rejoindre le point ✅. Ascenseur ❌, retour dans le bâtiment ❌ — ces deux comportements causent des décès chaque année.'},
-
-{type:'image-identify',imageKey:'baes',imageDesc:'BAES — Bloc Autonome Éclairage Sécurité',
-title:'Équipement vert lumineux',
-question:'Cet équipement avec pictogramme de sortie lumineux est un :',
-options:['Détecteur de fumée optique','Bloc Autonome d\'Éclairage de Sécurité (BAES)','Déclencheur manuel d\'alarme','Diffuseur sonore d\'alarme incendie'],
-correctAnswer:1,
-explanation:'BAES = Bloc Autonome d\'Éclairage de Sécurité. Batterie intégrée, autonomie 1h minimum. S\'allume automatiquement sur coupure secteur. Test mensuel obligatoire par l\'exploitant (bouton "test").'},
-
-{type:'decision',title:'Exercice d\'évacuation décevant',
-scenario:'L\'exercice d\'évacuation annuel vient de se terminer : 14 minutes pour évacuer 180 personnes sur 3 étages. Le précédent exercice avait duré 7 minutes. Un goulot d\'étranglement a été observé dans l\'escalier B.',
-question:'Comment gérez-vous le retour d\'expérience ?',
-steps:[
-{question:'ÉTAPE 1 — Après l\'exercice, que faites-vous en premier ?',options:[{text:'Féliciter quand même tout le monde',nextStep:99},{text:'Réunir les guides-files et serres-files pour un débriefing à chaud',nextStep:1},{text:'Appeler les pompiers pour signaler un dysfonctionnement',nextStep:99}]},
-{question:'ÉTAPE 2 — Goulot d\'étranglement dans l\'escalier B : quelle analyse faites-vous ?',options:[{text:'C\'est normal, les gens ne savent pas évacuer',nextStep:99},{text:'Identifier la cause : largeur insuffisante, affectation de l\'escalier C non communiquée, panique ?',nextStep:2},{text:'Interdire cet escalier sans analyse',nextStep:99}]},
-{question:'ÉTAPE 3 — Que consignez-vous dans le registre de sécurité ?',options:[{text:'Le temps total uniquement',nextStep:null},{text:'Compte-rendu complet : temps, effectif, anomalies, analyse des causes, plan d\'amélioration et mesures correctives',nextStep:null},{text:'Rien — c\'était un exercice, pas un vrai sinistre',nextStep:null}]}
-],
-correctPath:[1,1,1],
-explanation:'Débriefing immédiat → Analyse fine des causes → Compte-rendu complet au registre avec plan d\'amélioration. L\'exercice n\'a de valeur que s\'il génère des actions correctives.'},
-
-{type:'true-false',title:'Rôle du serre-file',
-question:'Le serre-file doit laisser toutes les portes ouvertes derrière lui pour faciliter la circulation lors de l\'évacuation.',
-options:['Vrai','Faux'],
-correctAnswer:1,
-explanation:'FAUX — Le serre-file doit FERMER toutes les portes coupe-feu derrière lui. Une porte CF fermée ralentit la progression du feu et de la fumée de 30 à 120 minutes selon sa résistance. C\'est une des actions les plus efficaces lors d\'une évacuation.'},
-
-{type:'scenario',title:'PMR coincée en hauteur',
-scenario:'Lors de l\'évacuation, vous croisez une collègue en fauteuil roulant au 4ème étage. L\'ascenseur est neutralisé. Les escaliers sont inaccessibles pour elle.',
-question:'Quelle est la procédure correcte ?',
-options:['La porter seul dans les escaliers malgré le risque','La laisser — les pompiers s\'en chargeront','La conduire dans l\'Espace d\'Attente Sécurisé (EAS) le plus proche et signaler sa position aux secours','Lui demander d\'attendre que la fumée se dissipe'],
-correctAnswer:2,
-explanation:'EAS = Espace d\'Attente Sécurisé, adjacent aux escaliers, protégé du feu. La PMR y attend les pompiers dans une zone sécurisée. Sa position DOIT être communiquée aux secours à l\'arrivée. Porter une personne dans des escaliers peut blesser les deux parties.'}
-]}
-];
-
-/* ════ NIVEAUX 2 ET 3 — Copies initiales à remplacer par fichiers fournis ════ */
-const BOXES_LEVEL_2=JSON.parse(JSON.stringify(BOXES_LEVEL_1));
-BOXES_LEVEL_2.forEach(b=>{b.subtitle='[SSIAP 2 — questions à enrichir] '+b.subtitle;});
-const BOXES_LEVEL_3=JSON.parse(JSON.stringify(BOXES_LEVEL_1));
-BOXES_LEVEL_3.forEach(b=>{b.subtitle='[SSIAP 3 — questions à enrichir] '+b.subtitle;});
+let BOXES_LEVEL_1=[],BOXES_LEVEL_2=[],BOXES_LEVEL_3=[];
 const BOXES_BY_LEVEL={1:BOXES_LEVEL_1,2:BOXES_LEVEL_2,3:BOXES_LEVEL_3};
 let BOXES_DATA=BOXES_LEVEL_1;
 
-/* ════ INIT FIREBASE ════ */
-function initializeFirebase(){if(typeof firebase==='undefined'){setTimeout(initializeFirebase,100);return;}try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);database=firebase.database();}catch(e){console.error('❌',e);}}
+window.addEventListener('catalogue-ready',()=>{
+  const db=window.BOXES_BY_LEVEL_FROM_DB||{};
+  for(const lvl of [1,2,3]){
+    const dst=BOXES_BY_LEVEL[lvl];
+    dst.length=0;
+    (db[lvl]||[]).forEach(b=>dst.push(b));
+  }
+  console.log('[catalogue] loaded',BOXES_LEVEL_1.length,BOXES_LEVEL_2.length,BOXES_LEVEL_3.length,'modules');
+  // Re-render the boxes screen if currently visible (in case it loaded before data)
+  const screen=document.getElementById('boxes-screen');
+  if(screen&&!screen.classList.contains('hidden')&&typeof showBoxesScreen==='function')showBoxesScreen();
+  // Re-render the session-config panel so module checkboxes appear
+  if(typeof renderSessionConfigUI==='function')renderSessionConfigUI();
+});
+
+/* ════ INIT BACKEND (Firebase shim → Supabase) ════ */
+function initializeFirebase(){if(typeof firebase==='undefined'){setTimeout(initializeFirebase,100);return;}try{if(!firebase.apps.length)firebase.initializeApp({});database=firebase.database();}catch(e){console.error('❌',e);}}
 initializeFirebase();
 
 /* ════ LOGS ════ */
@@ -917,15 +720,37 @@ function fireLog(level,category,message,meta={}){
     try{const buf=JSON.parse(localStorage.getItem('ssiapGameLogs')||'[]');buf.push(entry);if(buf.length>200)buf.splice(0,buf.length-200);localStorage.setItem('ssiapGameLogs',JSON.stringify(buf));}catch(e){}
     if(database&&sessionId){try{database.ref(`sessions/${sessionId}/logs`).push(entry).catch(()=>{});}catch(e){}}
 }
-window.refreshLogs=function(){
+window.refreshLogs=async function(){
     const container=document.getElementById('log-container');if(!container)return;
     container.innerHTML='<div class="text-gray-400 text-sm text-center py-4">Chargement...</div>';
-    if(!database||!sessionId){_allLogs=JSON.parse(localStorage.getItem('ssiapGameLogs')||'[]');populateLogFilters();renderLogs();return;}
-    database.ref(`sessions/${sessionId}/logs`).once('value',snap=>{
-        const raw=snap.val()||{};_allLogs=Object.values(raw).sort((a,b)=>a.ts-b.ts);
-        _logsCache.forEach(l=>{if(!_allLogs.find(x=>x.ts===l.ts&&x.message===l.message))_allLogs.push(l);});
-        _allLogs.sort((a,b)=>a.ts-b.ts);populateLogFilters();renderLogs();
-    });
+    // Always start with the local cache + localStorage snapshot, so even if
+    // the network read fails we still show something (and never get stuck on
+    // 'Chargement...').
+    let local=[];
+    try{local=JSON.parse(localStorage.getItem('ssiapGameLogs')||'[]');}catch{}
+    _allLogs=[...local,..._logsCache.filter(l=>!local.find(x=>x.ts===l.ts&&x.message===l.message))];
+
+    // Fetch the persisted logs for the current session from Supabase (via the
+    // dedicated client, which is more direct than going through the shim).
+    if(window.supa&&sessionId){
+        try{
+            const session=await window.supa.sessions.getByCode(sessionId);
+            if(session?.id){
+                const rows=await window.supa.logs.list(session.id,500);
+                const remote=(rows||[]).map(r=>({
+                    ts:new Date(r.created_at).getTime(),
+                    time:new Date(r.created_at).toLocaleTimeString('fr-FR'),
+                    level:r.level,category:r.category,message:r.message,
+                    team:r.team_name,...(r.metadata||{}),
+                }));
+                for(const r of remote){
+                    if(!_allLogs.find(x=>x.ts===r.ts&&x.message===r.message))_allLogs.push(r);
+                }
+            }
+        }catch(e){console.warn('[logs] fetch remote failed',e);}
+    }
+    _allLogs.sort((a,b)=>a.ts-b.ts);
+    populateLogFilters();renderLogs();
 };
 function populateLogFilters(){
     const sel=document.getElementById('log-filter-team');if(!sel)return;
@@ -975,7 +800,157 @@ function selectSSIAPLevel(level){
     const bL=document.getElementById('boxes-level-label');if(bL)bL.textContent=LEVEL_SHORT[level];
     const tL=document.getElementById('trainee-level-badge');if(tL)tL.textContent='🛡️ '+LEVEL_SHORT[level];
     if(database&&sessionId)database.ref(`sessions/${sessionId}/ssiapLevel`).set(level);
+    renderSessionConfigUI();
     fireLog('info','NIVEAU',`Niveau : ${LEVEL_LABELS[level]}`,{level});
+}
+
+/* ════ CONFIGURATION DE LA SESSION ════ */
+const GAME_TYPE_LABELS={quiz:'Quiz','true-false':'Vrai/Faux','multiple-select':'Multi','sequence':'Séquence','ranking':'Classement','matching':'Association','fill-blank':'À compléter','find-intruder':'Intrus','scenario':'Scénario','categories':'Catégories','decision':'Décision','image-identify':'Image'};
+const ALL_GAME_TYPES=Object.keys(GAME_TYPE_LABELS);
+let sessionConfig=loadSessionConfigFromLocal();
+
+function loadSessionConfigFromLocal(){
+    try{const raw=localStorage.getItem('ssiapSessionConfig');return raw?JSON.parse(raw):{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};}
+    catch{return{activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:null,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};}
+}
+function saveSessionConfigToLocal(){localStorage.setItem('ssiapSessionConfig',JSON.stringify(sessionConfig));}
+
+window.toggleSessionConfig=function(){
+    const body=document.getElementById('session-config-body');const icon=document.getElementById('config-toggle-icon');
+    body.classList.toggle('hidden');icon.textContent=body.classList.contains('hidden')?'▼':'▲';
+    if(!body.classList.contains('hidden'))renderSessionConfigUI();
+};
+
+function renderSessionConfigUI(){
+    const modulesEl=document.getElementById('cfg-modules-list');if(!modulesEl)return;
+    // Modules for current level
+    const active=sessionConfig.activeModules;
+    modulesEl.innerHTML=BOXES_DATA.map(m=>{
+        const checked=active===null||active.includes(m.id);
+        return `<label class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 ${checked?'border-blue-300':'border-gray-200'} cursor-pointer">
+          <input type="checkbox" data-cfg-module="${m.id}" ${checked?'checked':''} class="w-4 h-4">
+          <span>${m.icon} <strong>${m.title}</strong> <span class="text-gray-500">(${m.games.length}q)</span></span>
+        </label>`;
+    }).join('');
+    modulesEl.querySelectorAll('input[data-cfg-module]').forEach(cb=>cb.addEventListener('change',onCfgChange));
+
+    // Types
+    const typesEl=document.getElementById('cfg-types-list');
+    const typesActive=sessionConfig.qtypeFilters;
+    typesEl.innerHTML=ALL_GAME_TYPES.map(t=>{
+        const checked=typesActive===null||typesActive.includes(t);
+        return `<label class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 ${checked?'border-emerald-300':'border-gray-200'} cursor-pointer">
+          <input type="checkbox" data-cfg-type="${t}" ${checked?'checked':''} class="w-4 h-4">
+          <span>${GAME_TYPE_LABELS[t]}</span>
+        </label>`;
+    }).join('');
+    typesEl.querySelectorAll('input[data-cfg-type]').forEach(cb=>cb.addEventListener('change',onCfgChange));
+
+    document.getElementById('cfg-difficulty').value=sessionConfig.diffFilter??'';
+    document.getElementById('cfg-pool').value=sessionConfig.poolFilter??'';
+    document.getElementById('cfg-qpb').value=sessionConfig.qpb??QUESTIONS_PER_BOX;
+
+    // Libre mode
+    const libreToggle=document.getElementById('cfg-libre-toggle');
+    const libreRow=document.getElementById('cfg-libre-row');
+    const libreCount=document.getElementById('cfg-libre-count');
+    if(libreToggle){
+        libreToggle.checked=!!sessionConfig.libreMode;
+        libreRow.classList.toggle('hidden',!sessionConfig.libreMode);
+        libreCount.value=sessionConfig.libreCount??20;
+        libreToggle.onchange=()=>{
+            sessionConfig.libreMode=libreToggle.checked;
+            // Mutually exclusive with training mode
+            if(libreToggle.checked)sessionConfig.trainingMode=false;
+            saveSessionConfigToLocal();renderSessionConfigUI();updateStartButtonLabel();
+        };
+        libreCount.onchange=()=>{
+            sessionConfig.libreCount=Math.max(1,parseInt(libreCount.value)||20);
+            saveSessionConfigToLocal();
+        };
+    }
+    // Training Quiz
+    const trainingToggle=document.getElementById('cfg-training-toggle');
+    const trainingRow=document.getElementById('cfg-training-row');
+    const trainingCount=document.getElementById('cfg-training-count');
+    if(trainingToggle){
+        trainingToggle.checked=!!sessionConfig.trainingMode;
+        trainingRow.classList.toggle('hidden',!sessionConfig.trainingMode);
+        trainingCount.value=sessionConfig.trainingCount??20;
+        trainingToggle.onchange=()=>{
+            sessionConfig.trainingMode=trainingToggle.checked;
+            // Mutually exclusive with libre mode
+            if(trainingToggle.checked)sessionConfig.libreMode=false;
+            saveSessionConfigToLocal();renderSessionConfigUI();updateStartButtonLabel();
+        };
+        trainingCount.onchange=()=>{
+            sessionConfig.trainingCount=Math.max(1,parseInt(trainingCount.value)||20);
+            saveSessionConfigToLocal();
+        };
+    }
+    updateStartButtonLabel();
+}
+
+function updateStartButtonLabel(){
+    const btn=document.getElementById('start-game-btn');
+    if(!btn)return;
+    if(sessionConfig.trainingMode)btn.textContent='🎓 Lancer Training Quiz';
+    else if(sessionConfig.libreMode)btn.textContent='🎲 Lancer le Mode Libre';
+    else btn.textContent='🚀 Lancer le Jeu';
+}
+
+function onCfgChange(){
+    const modules=[...document.querySelectorAll('input[data-cfg-module]:checked')].map(c=>c.getAttribute('data-cfg-module'));
+    const types=[...document.querySelectorAll('input[data-cfg-type]:checked')].map(c=>c.getAttribute('data-cfg-type'));
+    const diff=document.getElementById('cfg-difficulty').value;
+    const pool=document.getElementById('cfg-pool').value;
+    const qpb=parseInt(document.getElementById('cfg-qpb').value)||8;
+    // null = "tous" (différent de [] = "aucun")
+    const allMods=BOXES_DATA.map(m=>m.id);
+    sessionConfig={
+        activeModules: modules.length===allMods.length?null:modules,
+        qtypeFilters:  types.length===ALL_GAME_TYPES.length?null:types,
+        diffFilter:    diff||null,
+        poolFilter:    pool||null,
+        qpb,
+        libreMode:     sessionConfig.libreMode,
+        libreCount:    sessionConfig.libreCount,
+    };
+    QUESTIONS_PER_BOX=qpb;
+    saveSessionConfigToLocal();
+    // Visual feedback
+    renderSessionConfigUI();
+}
+
+window.resetSessionConfig=function(){
+    sessionConfig={activeModules:null,qtypeFilters:null,diffFilter:null,poolFilter:null,qpb:8,libreMode:false,libreCount:20,trainingMode:false,trainingCount:20};
+    QUESTIONS_PER_BOX=8;
+    saveSessionConfigToLocal();
+    renderSessionConfigUI();
+};
+
+// Bulk select/deselect all checkboxes in a group ('module' or 'type').
+window.cfgSetAll=function(group,checked){
+    if(group==='module'){
+        sessionConfig.activeModules=checked?null:[];
+    }else if(group==='type'){
+        sessionConfig.qtypeFilters=checked?null:[];
+    }
+    saveSessionConfigToLocal();
+    renderSessionConfigUI();
+};
+
+// Returns true if a module is enabled by the current session config.
+function moduleEnabled(moduleId){
+    return !sessionConfig.activeModules || sessionConfig.activeModules.includes(moduleId);
+}
+
+// Returns true if a question matches the current type / difficulty / pool filters.
+function questionMatchesFilters(g){
+    if(sessionConfig.qtypeFilters&&!sessionConfig.qtypeFilters.includes(g.type))return false;
+    if(sessionConfig.diffFilter&&String(g.difficulty??1)!==String(sessionConfig.diffFilter))return false;
+    if(sessionConfig.poolFilter&&(g.pool||'quiz')!==sessionConfig.poolFilter)return false;
+    return true;
 }
 
 /* ════ HELPERS ════ */
@@ -1012,19 +987,148 @@ function showCustomAlert(msg){const m=document.createElement('div');m.className=
 function showConfirmDialog(msg,onConfirm){const m=document.createElement('div');m.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';m.innerHTML=`<div class="glass-morphism p-8 rounded-2xl shadow-2xl max-w-md w-full bounce-in border-2 border-blue-400"><p class="text-gray-700 mb-6 text-center text-xl font-semibold">${msg}</p><div class="flex gap-3"><button class="flex-1 px-6 py-4 bg-gray-500 text-white rounded-xl font-bold" onclick="this.closest('.fixed').remove()">Annuler</button><button id="confirm-ok" class="flex-1 px-6 py-4 ssiap-gradient text-white rounded-xl font-bold">Confirmer</button></div></div>`;document.body.appendChild(m);m.querySelector('#confirm-ok').addEventListener('click',()=>{m.remove();onConfirm();});}
 function getPictoHtml(game,size){const s=size||'160px';if(game.imageKey&&PICTOGRAMS[game.imageKey])return`<div style="width:${s};height:${s};margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,.2)">${PICTOGRAMS[game.imageKey]}</div>`;return`<div class="text-9xl text-center float">${game.image||'🖼️'}</div>`;}
 
+// Renders the uploaded image/video attached to a question (if any).
+// Used both on the projector and the trainee phone, prepended to the
+// question content. `variant` lets us scale per surface.
+function renderUploadedMedia(game, variant='trainee'){
+    if(!game||(!game.imageUrl&&!game.videoUrl))return '';
+    const big=variant==='projector';
+    const maxH=big?'320px':'220px';
+    let html='<div class="flex flex-col items-center justify-center mb-4">';
+    if(game.imageUrl){
+        html+=`<img src="${game.imageUrl}" alt="" style="max-height:${maxH};max-width:100%;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);object-fit:contain">`;
+    }
+    if(game.videoUrl){
+        html+=`<video src="${game.videoUrl}" controls ${big?'autoplay':''} style="max-height:${maxH};max-width:100%;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18);background:#000"></video>`;
+    }
+    html+='</div>';
+    return html;
+}
+
 /* ════ LABELS & ICÔNES — 12 types ════ */
 function getGameTypeLabel(type){return{'quiz':'❓ Quiz','true-false':'✓✗ Vrai / Faux','sequence':'🔢 Remet dans l\'ordre','matching':'🔗 Association','find-intruder':'🔍 Trouve l\'intrus','multiple-select':'☑️ Plusieurs réponses','scenario':'🎭 Mise en situation','ranking':'🏅 Classement','fill-blank':'✍️ Texte à trous','categories':'📂 Trie dans les catégories','decision':'🌳 Arbre de décision','image-identify':'🖼️ Identifie le panneau'}[type]||'🎯 Question';}
 function getGameIcon(type){return{'quiz':'❓','true-false':'✓✗','sequence':'🔢','matching':'🔗','find-intruder':'🔍','multiple-select':'☑️','scenario':'🎭','ranking':'🏅','fill-blank':'✍️','categories':'📂','decision':'🌳','image-identify':'🖼️'}[type]||'🎯';}
 
 /* ════ CALCUL POINTS & TIMER ════ */
 function calculatePointsWithSpeedBonus(isCorrect,elapsedTime){if(!isCorrect)return{basePoints:0,speedBonus:0,totalPoints:0};const base=POINTS_PER_ANSWER,end=QUESTION_TIME-5;const bonus=elapsedTime<end?Math.max(0,Math.round(SPEED_BONUS_MAX*(1-elapsedTime/end))):0;return{basePoints:base,speedBonus:bonus,totalPoints:base+bonus};}
+/* ════ AUDIO ENGINE (WebAudio, no external assets) ════ */
+let _audioCtx=null;
+function audioCtx(){
+    if(!_audioCtx){
+        try{_audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{return null;}
+    }
+    if(_audioCtx.state==='suspended')_audioCtx.resume().catch(()=>{});
+    return _audioCtx;
+}
+// Tone with optional ramp + simple ADSR-ish envelope
+function playTone({freq=800,duration=.15,volume=.25,type='sine',freqEnd=null,attack=.01,release=.05}={}){
+    const ctx=audioCtx();if(!ctx)return;
+    const t=ctx.currentTime;
+    const osc=ctx.createOscillator();osc.type=type;osc.frequency.setValueAtTime(freq,t);
+    if(freqEnd)osc.frequency.exponentialRampToValueAtTime(Math.max(0.001,freqEnd),t+duration);
+    const gain=ctx.createGain();gain.gain.setValueAtTime(0,t);
+    gain.gain.linearRampToValueAtTime(volume,t+attack);
+    gain.gain.setValueAtTime(volume,t+duration-release);
+    gain.gain.linearRampToValueAtTime(0,t+duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);osc.stop(t+duration+.02);
+}
+// Countdown bip — pitch and volume rise as time runs out (10 → 1).
+function playCountdownBeep(secondsLeft){
+    const t=Math.max(1,Math.min(10,secondsLeft));
+    const freq=600+(11-t)*60;          // 660..1200 Hz
+    const vol=.08+(11-t)*.025;         // .08..0.33
+    playTone({freq,duration:.12,volume:vol,type:'square'});
+}
+// Gong — low decaying tone for time up
+function playGong(){
+    playTone({freq:140,freqEnd:60,duration:.9,volume:.4,type:'triangle',attack:.005,release:.6});
+    setTimeout(()=>playTone({freq:90,freqEnd:50,duration:.7,volume:.25,type:'sine'}),60);
+}
+// Buzzer — short 'bling' when a team answers
+function playBuzzer(){
+    playTone({freq:880,duration:.08,volume:.18,type:'sine'});
+    setTimeout(()=>playTone({freq:1320,duration:.1,volume:.22,type:'sine'}),70);
+}
+// Applause / fanfare for podium (optional)
+function playFanfare(){
+    [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone({freq:f,duration:.18,volume:.22,type:'triangle'}),i*120));
+}
+
+// One synthesized 'clap' — short band-pass-filtered noise burst.
+function playClap(volume=.18){
+    const ctx=audioCtx();if(!ctx)return;
+    const t=ctx.currentTime;
+    const dur=.06;
+    const bufferSize=Math.floor(ctx.sampleRate*dur);
+    const buf=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufferSize;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/bufferSize,2);
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1500+Math.random()*1500;filter.Q.value=1.5;
+    const gain=ctx.createGain();gain.gain.setValueAtTime(volume,t);gain.gain.exponentialRampToValueAtTime(.001,t+dur);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(t);src.stop(t+dur+.02);
+}
+// Procedural applause: dozens of overlapping claps over ~3.5s, growing to a
+// crowd peak then tapering off. Falls back to this if /sounds/applause.mp3
+// is missing or fails to load.
+function playApplauseProcedural(){
+    const total=120,duration=3.5;
+    for(let i=0;i<total;i++){
+        // ramp density: more claps in the middle
+        const t=i/total;
+        const peak=1-Math.abs(t-.5)*1.6;
+        const delay=t*duration*1000+Math.random()*60;
+        const vol=.06+peak*.16+Math.random()*.05;
+        setTimeout(()=>playClap(vol),delay);
+    }
+    // a low ambient 'crowd noise' rumble layer
+    const ctx=audioCtx();if(!ctx)return;
+    const now=ctx.currentTime;
+    const noiseLen=ctx.sampleRate*duration;
+    const buf=ctx.createBuffer(1,noiseLen,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<noiseLen;i++)data[i]=(Math.random()*2-1)*0.4;
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1200;filter.Q.value=.7;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(0,now);
+    gain.gain.linearRampToValueAtTime(.08,now+.4);
+    gain.gain.linearRampToValueAtTime(.05,now+duration-.5);
+    gain.gain.linearRampToValueAtTime(0,now+duration);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(now);src.stop(now+duration+.05);
+}
+// Try a real applause MP3 first; fall back to procedural.
+// Sources are tried in order: local file (drop your own MP3 in /sounds/),
+// then a Supabase-hosted file shared with the RPP project, then synth.
+const APPLAUSE_SOURCES=[
+    'sounds/applause.mp3',
+    'https://xjfbuztrfysxtegxluwd.supabase.co/storage/v1/object/public/son/emircanalp-applause-alks-ses-efekti-125030.mp3',
+];
+let _applauseAudio=null;
+function playApplause(){
+    const tryNext=(i)=>{
+        if(i>=APPLAUSE_SOURCES.length){playApplauseProcedural();return;}
+        try{
+            const a=new Audio(APPLAUSE_SOURCES[i]);
+            a.preload='auto';a.volume=.7;
+            a.play().then(()=>{_applauseAudio=a;}).catch(()=>tryNext(i+1));
+        }catch{tryNext(i+1);}
+    };
+    if(_applauseAudio){_applauseAudio.currentTime=0;_applauseAudio.play().catch(()=>tryNext(0));return;}
+    tryNext(0);
+}
+
 function startQuestionTimer(){
     timeRemaining=QUESTION_TIME;questionStartTime=Date.now();
     const d=document.getElementById('timer-display');d.textContent=timeRemaining;d.style.color='white';d.classList.remove('pulse-anim');
     timerInterval=setInterval(()=>{
         timeRemaining--;d.textContent=timeRemaining;
         if(timeRemaining<=5){d.style.color='#FCD34D';d.classList.add('pulse-anim');}else if(timeRemaining<=10)d.style.color='#FFA500';
-        if(timeRemaining<=0){clearInterval(timerInterval);timerInterval=null;handleTimeUp();}
+        if(timeRemaining>0&&timeRemaining<=10)playCountdownBeep(timeRemaining);
+        if(timeRemaining<=0){clearInterval(timerInterval);timerInterval=null;playGong();handleTimeUp();}
     },1000);
 }
 function handleTimeUp(){
@@ -1038,7 +1142,12 @@ function handleTimeUp(){
 
 /* ════ PRÉPARATION QUESTIONS ════ */
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function getRandomizedGames(boxIndex){return shuffle([...BOXES_DATA[boxIndex].games]).slice(0,Math.min(QUESTIONS_PER_BOX,BOXES_DATA[boxIndex].games.length));}
+function getRandomizedGames(boxIndex){
+    const all=BOXES_DATA[boxIndex].games||[];
+    const filtered=all.filter(questionMatchesFilters);
+    const pool=filtered.length?filtered:all; // fallback to "all" if filters wipe out the module
+    return shuffle([...pool]).slice(0,Math.min(QUESTIONS_PER_BOX,pool.length));
+}
 function prepareGameWithShuffledAnswers(game){
     const g={...game};
     if(['quiz','find-intruder','scenario','image-identify'].includes(game.type)){const arr=game.options.map((o,i)=>({text:o,originalIndex:i}));g.optionsWithIndex=shuffle(arr);g.options=g.optionsWithIndex.map(o=>o.text);}
@@ -1052,9 +1161,18 @@ function prepareGameWithShuffledAnswers(game){
 }
 
 /* ════ LOGIN SUPERVISEUR ════ */
-document.getElementById('supervisor-login-form').addEventListener('submit',e=>{
+document.getElementById('supervisor-login-form').addEventListener('submit',async e=>{
     e.preventDefault();const pwd=document.getElementById('supervisor-password').value;
-    if(pwd===SUPERVISOR_PASSWORD){userRole='supervisor';sessionId='ssiap_'+generateUUID();loadAdminSettings();initializeSupervisor();}
+    let authed=false;
+    try{
+      // Wait for the Supabase client to be ready (module script loads async).
+      const start=Date.now();
+      while(!window.supa&&Date.now()-start<3000){await new Promise(r=>setTimeout(r,50));}
+      if(!window.supa){showCustomAlert('❌ Backend indisponible, réessayez.');return;}
+      const u=await window.supa.auth.login('admin@ssiap.local',pwd);
+      authed=!!u;
+    }catch(err){console.error('[auth]',err);}
+    if(authed){userRole='supervisor';sessionId='ssiap_'+generateUUID();loadAdminSettings();initializeSupervisor();}
     else{const err=document.getElementById('login-error');err.classList.remove('hidden');setTimeout(()=>err.classList.add('hidden'),3000);}
 });
 document.getElementById('password-toggle').addEventListener('click',e=>{e.preventDefault();const input=document.getElementById('supervisor-password');input.type=input.type==='password'?'text':'password';});
@@ -1065,6 +1183,7 @@ function initializeSupervisor(){
     new QRCode(qrEl,{text:window.location.href.split('?')[0]+'?session='+sessionId,width:220,height:220,colorDark:'#3B82F6',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
     database.ref('sessions/'+sessionId).set({status:'waiting',currentBox:-1,currentGameIndex:-1,teams:{},openedBoxes:[],ssiapLevel:SELECTED_SSIAP_LEVEL,createdAt:Date.now()});
     database.ref('sessions/'+sessionId+'/teams').on('value',snap=>updateTeamsList(snap.val()));
+    if(typeof updateStartButtonLabel==='function')updateStartButtonLabel();
     fireLog('info','SESSION',`Session SSIAP créée — ${LEVEL_SHORT[SELECTED_SSIAP_LEVEL]}`,{sessionId,level:SELECTED_SSIAP_LEVEL});
 }
 function updateTeamsList(teams){
@@ -1072,23 +1191,147 @@ function updateTeamsList(teams){
     if(!teams||!Object.keys(teams).length){list.innerHTML='<div class="text-center text-gray-500 col-span-3">En attente des équipes...</div>';count.textContent='0';return;}
     count.textContent=Object.keys(teams).length;
     Object.entries(teams).forEach(([id,t])=>{if(t?.online===false&&t?.name){const ls=t?.lastOfflineLog||0;if(Date.now()-ls>10000){fireLog('warn','DECONNEXION',`"${t.name}" hors-ligne`,{teamId:id,score:t?.score||0});database.ref('sessions/'+sessionId+'/teams/'+id+'/lastOfflineLog').set(Date.now());}}});
-    list.innerHTML=Object.entries(teams).map(([id,t])=>`<div class="bg-white p-4 rounded-lg shadow-lg text-center relative ${t?.online===false?'opacity-60':''}"><button onclick="removeTeam('${id}')" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full font-bold text-sm">✕</button><div class="text-3xl mb-2">${getTeamEmoji(id)}</div><div class="text-lg font-bold text-gray-800">${t?.name||'?'}</div><div class="text-sm text-gray-600">Score : ${t?.score||0} pts</div>${t?.online===false?'<div class="text-xs text-orange-500 font-bold mt-1">⚠️ Déconnecté</div>':''}</div>`).join('');
+    list.innerHTML=Object.entries(teams).map(([id,t])=>`<div class="bg-white p-4 rounded-lg shadow-lg text-center relative ${t?.online===false?'opacity-60':''}"><button onclick="removeTeam('${id}')" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full font-bold text-sm">✕</button><div class="text-4xl mb-2 flex justify-center">${renderAvatar(t?.avatar||getTeamEmoji(id),'av-lg')}</div><div class="text-lg font-bold text-gray-800">${t?.name||'?'}</div><div class="text-sm text-gray-600">Score : ${t?.score||0} pts</div>${t?.online===false?'<div class="text-xs text-orange-500 font-bold mt-1">⚠️ Déconnecté</div>':''}</div>`).join('');
 }
 window.removeTeam=function(tId){showConfirmDialog('Supprimer cette équipe ?',()=>database.ref('sessions/'+sessionId+'/teams/'+tId).remove());};
 
 /* ════ LANCEMENT ════ */
-document.getElementById('start-game-btn').addEventListener('click',()=>{database.ref('sessions/'+sessionId+'/status').set('playing');database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);showBoxesScreen();});
+document.getElementById('start-game-btn').addEventListener('click',async()=>{
+    // Persist the session config snapshot to Supabase (jsonb).
+    if(window.supa){
+        try{
+            const code=sessionId;
+            const session=await window.supa.sessions.getByCode(code);
+            if(session?.id){
+                await window.supa.sessions.update(session.id,{
+                    config:{
+                        qpb:QUESTIONS_PER_BOX,
+                        activeModules:sessionConfig.activeModules,
+                        qtypeFilters:sessionConfig.qtypeFilters,
+                        diffFilter:sessionConfig.diffFilter,
+                        poolFilter:sessionConfig.poolFilter,
+                        libreMode:sessionConfig.libreMode,
+                        libreCount:sessionConfig.libreCount,
+                        trainingMode:sessionConfig.trainingMode,
+                        trainingCount:sessionConfig.trainingCount,
+                    },
+                });
+            }
+        }catch(e){console.warn('[config] save failed',e);}
+    }
+    database.ref('sessions/'+sessionId+'/status').set('playing');
+    database.ref('sessions/'+sessionId+'/ssiapLevel').set(SELECTED_SSIAP_LEVEL);
+    if(sessionConfig.trainingMode){
+        // Quiz training mode (pure QCM from pool='quiz')
+        launchTrainingMode();
+    }else if(sessionConfig.libreMode){
+        // Skip the boxes screen entirely (any pool, all types)
+        launchLibreMode();
+    }else{
+        showBoxesScreen();
+    }
+});
 function showBoxesScreen(){
     showScreenSafe('boxes-screen');
     document.getElementById('boxes-level-label').textContent=LEVEL_SHORT[SELECTED_SSIAP_LEVEL];
     database.ref('sessions/'+sessionId+'/openedBoxes').once('value',snap=>{openedBoxes=snap.val()||[];renderBoxes();});
 }
+let currentBoxesIndex=0;
+// Display order for the carousel: active modules first, then completed,
+// then disabled. Each entry references the ORIGINAL BOXES_DATA index so
+// game routing (openBox, openedBoxes, currentBox) is unaffected.
+let boxesDisplayOrder=[];
+
+function computeBoxesDisplayOrder(){
+    const ranked=BOXES_DATA.map((box,idx)=>{
+        const done=openedBoxes.includes(idx);
+        const enabled=moduleEnabled(box.id);
+        const rank=done?1:(enabled?0:2); // 0=active, 1=done, 2=disabled
+        return {idx,rank};
+    });
+    // Stable sort by rank
+    ranked.sort((a,b)=>a.rank-b.rank);
+    return ranked.map(r=>r.idx);
+}
+
 function renderBoxes(){
-    document.getElementById('boxes-container').innerHTML=BOXES_DATA.map((box,idx)=>{
-        const done=openedBoxes.includes(idx);const nb=Math.min(QUESTIONS_PER_BOX,box.games.length);
-        return`<div class="glass-morphism rounded-3xl shadow-2xl p-8 text-center transform transition-all ${done?'box-disabled':'cursor-pointer hover:scale-105'}" onclick="${done?'':` openBox(${idx})`}"><div class="text-8xl mb-4 ${done?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${box.subtitle}</p><p class="text-xs text-gray-400 mb-3">${box.games.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${done?'✅ Terminé':nb+' questions — 12 types variés'}</div></div>`;
+    const container=document.getElementById('boxes-container');
+    if(!BOXES_DATA.length){container.innerHTML='';return;}
+    boxesDisplayOrder=computeBoxesDisplayOrder();
+    // Snap to the first active (not done, enabled) module on every render so
+    // the supervisor always lands on something playable.
+    const firstActive=boxesDisplayOrder.findIndex(i=>!openedBoxes.includes(i)&&moduleEnabled(BOXES_DATA[i].id));
+    currentBoxesIndex=firstActive>=0?firstActive:0;
+    container.innerHTML=boxesDisplayOrder.map(originalIdx=>{
+        const box=BOXES_DATA[originalIdx];
+        const done=openedBoxes.includes(originalIdx);
+        const enabled=moduleEnabled(box.id);
+        const filtered=(box.games||[]).filter(questionMatchesFilters);
+        const pool=filtered.length?filtered:(box.games||[]);
+        const nb=Math.min(QUESTIONS_PER_BOX,pool.length);
+        const disabled=done||!enabled;
+        const subtitle=enabled?(box.subtitle||''):'(Module désactivé en config session)';
+        const footer=done?'✅ Terminé':(enabled?(nb+' questions — types variés'):'⏭️ Désactivé');
+        return`<div class="carousel-card glass-morphism rounded-3xl shadow-2xl p-8 text-center ${disabled?'box-disabled':''}" data-box-idx="${originalIdx}" data-disabled="${disabled?'1':'0'}"><div class="text-8xl mb-4 ${disabled?'':'float'}">${box.icon}</div><h3 class="text-2xl font-bold text-gray-800 mb-2">${box.title}</h3><p class="text-sm text-gray-600 mb-1">${subtitle}</p><p class="text-xs text-gray-400 mb-3">${pool.length} questions dispo.</p><div class="ssiap-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">${footer}</div></div>`;
+    }).join('');
+    container.querySelectorAll('.carousel-card').forEach(card=>{
+        card.addEventListener('click',()=>{
+            const originalIdx=parseInt(card.getAttribute('data-box-idx'));
+            const disabled=card.getAttribute('data-disabled')==='1';
+            const displayPos=boxesDisplayOrder.indexOf(originalIdx);
+            if(displayPos!==currentBoxesIndex){currentBoxesIndex=displayPos;layoutBoxesCarousel();renderBoxesDots();return;}
+            if(!disabled)openBox(originalIdx);
+        });
+    });
+    layoutBoxesCarousel();
+    renderBoxesDots();
+}
+
+function layoutBoxesCarousel(){
+    const cards=document.querySelectorAll('#boxes-container .carousel-card');
+    const total=cards.length;
+    cards.forEach((el,idx)=>{
+        const diff=((idx-currentBoxesIndex)%total+total)%total; // 0..total-1
+        let cls='pos-hidden';
+        if(diff===0)cls='pos-center';
+        else if(diff===1)cls='pos-right';
+        else if(diff===total-1)cls='pos-left';
+        else if(diff===2&&total>4)cls='pos-far-right';
+        else if(diff===total-2&&total>4)cls='pos-far-left';
+        el.className=el.className.replace(/\bpos-\S+/g,'').trim()+' '+cls;
+    });
+    const prev=document.getElementById('boxes-prev'),next=document.getElementById('boxes-next');
+    if(prev)prev.disabled=total<=1;
+    if(next)next.disabled=total<=1;
+}
+
+function renderBoxesDots(){
+    const dots=document.getElementById('boxes-dots');if(!dots)return;
+    dots.innerHTML=boxesDisplayOrder.map((origIdx,i)=>{
+        const done=openedBoxes.includes(origIdx);
+        const enabled=moduleEnabled(BOXES_DATA[origIdx].id);
+        const cls=i===currentBoxesIndex?'active':(done?'done':(enabled?'':'inactive'));
+        return `<button class="carousel-dot ${cls}" onclick="boxesCarouselGoto(${i})" aria-label="Module ${i+1}"></button>`;
     }).join('');
 }
+
+window.boxesCarouselNav=function(dir){
+    if(!boxesDisplayOrder.length)return;
+    currentBoxesIndex=(currentBoxesIndex+dir+boxesDisplayOrder.length)%boxesDisplayOrder.length;
+    layoutBoxesCarousel();renderBoxesDots();
+};
+window.boxesCarouselGoto=function(displayPos){
+    currentBoxesIndex=Math.max(0,Math.min(displayPos,boxesDisplayOrder.length-1));
+    layoutBoxesCarousel();renderBoxesDots();
+};
+// Keyboard navigation when the boxes screen is visible
+document.addEventListener('keydown',e=>{
+    const screen=document.getElementById('boxes-screen');
+    if(!screen||screen.classList.contains('hidden'))return;
+    if(e.key==='ArrowLeft'){e.preventDefault();boxesCarouselNav(-1);}
+    else if(e.key==='ArrowRight'){e.preventDefault();boxesCarouselNav(1);}
+    else if(e.key==='Enter'){e.preventDefault();const card=document.querySelector('#boxes-container .carousel-card.pos-center');if(card&&card.getAttribute('data-disabled')!=='1')openBox(parseInt(card.getAttribute('data-box-idx')));}
+});
 window.openBox=function(boxIndex){
     currentBox=boxIndex;currentGameIndex=0;
     const games=getRandomizedGames(boxIndex);
@@ -1099,6 +1342,49 @@ window.openBox=function(boxIndex){
     database.ref('sessions/'+sessionId).update({currentBox:boxIndex,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
     loadGame();
 };
+
+// Mode libre — random pool drawn across all enabled modules, no boxes screen.
+function launchLibreMode(){
+    const enabledModules=BOXES_DATA.filter(m=>moduleEnabled(m.id));
+    const pool=[];
+    for(const m of enabledModules){
+        for(const g of (m.games||[])){
+            if(questionMatchesFilters(g))pool.push(g);
+        }
+    }
+    if(!pool.length){showCustomAlert('❌ Aucune question disponible avec ces filtres.');return;}
+    const count=Math.min(sessionConfig.libreCount||20,pool.length);
+    const games=shuffle(pool).slice(0,count);
+    currentBox=-1;currentGameIndex=0;
+    const typesMap={};games.forEach(g=>{typesMap[g.type]=(typesMap[g.type]||0)+1;});
+    const typesStr=Object.entries(typesMap).map(([t,n])=>`${n}×${getGameIcon(t)}`).join(' ');
+    fireLog('info','LIBRE',`Mode libre : ${games.length}q sur ${pool.length} disponibles — Types: ${typesStr}`,{count:games.length,level:SELECTED_SSIAP_LEVEL});
+    database.ref('sessions/'+sessionId).update({currentBox:-1,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
+    loadGame();
+}
+
+// Training Quiz — like Mode libre but FORCED to pool='quiz' (pure QCM).
+// The active modules selection above the toggle still applies; type/difficulty
+// filters also apply.
+function launchTrainingMode(){
+    const enabledModules=BOXES_DATA.filter(m=>moduleEnabled(m.id));
+    const pool=[];
+    for(const m of enabledModules){
+        for(const g of (m.games||[])){
+            if((g.pool||'quiz')!=='quiz')continue;            // force pool=quiz
+            if(sessionConfig.qtypeFilters&&!sessionConfig.qtypeFilters.includes(g.type))continue;
+            if(sessionConfig.diffFilter&&String(g.difficulty??1)!==String(sessionConfig.diffFilter))continue;
+            pool.push(g);
+        }
+    }
+    if(!pool.length){showCustomAlert('❌ Aucune question quiz disponible avec ces modules / filtres.');return;}
+    const count=Math.min(sessionConfig.trainingCount||20,pool.length);
+    const games=shuffle(pool).slice(0,count);
+    currentBox=-1;currentGameIndex=0;
+    fireLog('info','TRAINING',`Training Quiz : ${games.length}q sur ${pool.length} disponibles (pool=quiz)`,{count:games.length,level:SELECTED_SSIAP_LEVEL});
+    database.ref('sessions/'+sessionId).update({currentBox:-1,currentGameIndex:0,gameStatus:'question',randomizedGames:games});
+    loadGame();
+}
 
 /* ════ CHARGEMENT QUESTION ════ */
 function loadGame(){
@@ -1126,7 +1412,7 @@ function showProjectorQuestion(game){
     document.getElementById('projector-question-text').textContent=game.question;
     const sb=document.getElementById('projector-scenario-box'),st=document.getElementById('projector-scenario-text');
     if(game.scenario){st.textContent=game.scenario;sb.classList.remove('hidden');}else sb.classList.add('hidden');
-    document.getElementById('projector-game-container').innerHTML=renderGameForProjector(game);
+    document.getElementById('projector-game-container').innerHTML=renderUploadedMedia(game,'projector')+renderGameForProjector(game);
     startQuestionTimer();
 }
 function renderGameForProjector(game){
@@ -1150,21 +1436,55 @@ function renderGameForProjector(game){
 }
 
 /* ════ CORRECTION ════ */
+// Buzzer notifications: track which teams have already been announced
+// for the current question so we don't fire twice on Realtime echoes.
+let buzzedTeams=new Set();
+let teamsBuzzListener=null;
+
+function showBuzzerToast(team){
+    let stack=document.getElementById('buzzer-stack');
+    if(!stack){stack=document.createElement('div');stack.id='buzzer-stack';document.body.appendChild(stack);}
+    const toast=document.createElement('div');
+    toast.className='buzzer-toast';
+    toast.innerHTML=`<span class="bz-avatar">${renderAvatar(team.avatar||'🛡️','av-md')}</span><div><div class="bz-name">${team.name||'?'}</div><div class="bz-hint">a répondu !</div></div>`;
+    stack.appendChild(toast);
+    setTimeout(()=>{toast.classList.add('leaving');setTimeout(()=>toast.remove(),400);},2400);
+}
+
 function startAnswersCountListener(){
     database.ref('sessions/'+sessionId+'/teams').once('value',snap=>{
         const teams=snap.val();if(!teams)return;const total=Object.keys(teams).length;
         document.getElementById('total-teams-count').textContent=total;
+        // Reset the buzzer dedupe set for the new question
+        buzzedTeams.clear();
         answersListener=snap=>{
             const count=snap.val()||0;document.getElementById('answered-count').textContent=count;document.getElementById('total-teams-count').textContent=total;
-            if(count>=total&&total>0){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}if(answersListener){database.ref('sessions/'+sessionId+'/answersCount').off('value',answersListener);answersListener=null;}showCorrection();}
+            if(count>=total&&total>0){
+                if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+                if(answersListener){database.ref('sessions/'+sessionId+'/answersCount').off('value',answersListener);answersListener=null;}
+                if(teamsBuzzListener){database.ref('sessions/'+sessionId+'/teams').off('value',teamsBuzzListener);teamsBuzzListener=null;}
+                showCorrection();
+            }
         };
         database.ref('sessions/'+sessionId+'/answersCount').on('value',answersListener);
+        // Buzzer: watch teams for has_answered -> true transitions
+        teamsBuzzListener=snap=>{
+            const ts=snap.val()||{};
+            for(const [id,t] of Object.entries(ts)){
+                if(t?.hasAnswered&&!buzzedTeams.has(id)){
+                    buzzedTeams.add(id);
+                    showBuzzerToast({name:t.name,avatar:t.avatar});
+                    playBuzzer();
+                }
+            }
+        };
+        database.ref('sessions/'+sessionId+'/teams').on('value',teamsBuzzListener);
     });
 }
 function showCorrection(){
     database.ref('sessions/'+sessionId+'/currentGame').once('value',snap=>{
         const game=snap.val();if(!game)return;calculateAndUpdateScores(game);
-        setTimeout(()=>{database.ref('sessions/'+sessionId+'/gameStatus').set('correction').then(()=>{setTimeout(()=>{showScreenSafe('projector-correction');document.getElementById('projector-explanation').textContent=game.explanation||'Bonne réponse !';document.getElementById('projector-correction-content').innerHTML=renderCorrection(game);},500);});},300);
+        setTimeout(()=>{database.ref('sessions/'+sessionId+'/gameStatus').set('correction').then(()=>{setTimeout(()=>{showScreenSafe('projector-correction');document.getElementById('projector-explanation').textContent=game.explanation||'Bonne réponse !';document.getElementById('projector-correction-content').innerHTML=renderUploadedMedia(game,'projector')+renderCorrection(game);},500);});},300);
     });
 }
 function renderCorrection(game){
@@ -1199,7 +1519,18 @@ document.getElementById('next-question-btn').addEventListener('click',()=>{
     currentGameIndex++;
     database.ref('sessions/'+sessionId+'/randomizedGames').once('value',snap=>{
         const games=snap.val();if(!games)return;
-        if(currentGameIndex>=games.length){if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);currentBox<BOXES_DATA.length-1?showPauseScreen():showPodiumSupervisor();}
+        if(currentGameIndex>=games.length){
+            if(currentBox===-1){
+                // Mode libre: pas de notion de module, on va direct au podium.
+                showPodiumSupervisor();
+            }else{
+                if(!openedBoxes.includes(currentBox))openedBoxes.push(currentBox);
+                database.ref('sessions/'+sessionId+'/openedBoxes').set(openedBoxes);
+                // Are there still enabled modules not yet opened?
+                const remaining=BOXES_DATA.some((b,i)=>i!==currentBox&&!openedBoxes.includes(i)&&moduleEnabled(b.id));
+                remaining?showPauseScreen():showPodiumSupervisor();
+            }
+        }
         else loadGame();
     });
 });
@@ -1208,15 +1539,16 @@ document.getElementById('next-box-btn').addEventListener('click',()=>{database.r
 function displayRanking(cId){
     database.ref('sessions/'+sessionId+'/teams').once('value',snap=>{
         const teams=snap.val();if(!teams)return;
-        const arr=Object.entries(teams).map(([id,t])=>({id,name:t?.name||'?',score:t?.score||0})).sort((a,b)=>b.score-a.score);
+        const arr=Object.entries(teams).map(([id,t])=>({id,name:t?.name||'?',score:t?.score||0,avatar:t?.avatar||getTeamEmoji(id)})).sort((a,b)=>b.score-a.score);
         const el=document.getElementById(cId);if(!el)return;
-        el.innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-4 ${i<3?'bg-gradient-to-r from-yellow-100 to-blue-100':'bg-gray-100'} rounded-lg mb-2"><div class="flex items-center gap-4"><div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div><div class="text-xl font-bold">${t.name}</div></div><div class="text-2xl font-bold text-primary">${t.score} pts</div></div>`).join('');
+        el.innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-4 ${i<3?'bg-gradient-to-r from-yellow-100 to-blue-100':'bg-gray-100'} rounded-lg mb-2"><div class="flex items-center gap-4"><div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div><div class="text-3xl">${renderAvatar(t.avatar,'av-md')}</div><div class="text-xl font-bold">${t.name}</div></div><div class="text-2xl font-bold text-primary">${t.score} pts</div></div>`).join('');
     });
 }
 
 /* ════ PODIUMS ════ */
 function showPodiumSupervisor(){
     showScreenSafe('podium-screen');database.ref('sessions/'+sessionId+'/gameStatus').set('finished');createConfetti();
+    playApplause();
     database.ref('sessions/'+sessionId+'/teams').once('value',snap=>{
         const teams=snap.val();if(!teams)return;
         const arr=Object.entries(teams).map(([id,t])=>({id,name:t?.name||'?',score:t?.score||0})).sort((a,b)=>b.score-a.score);
@@ -1247,9 +1579,119 @@ function showPodiumTrainee(){
         document.getElementById('trainee-ranking-final').innerHTML=arr.map((t,i)=>`<div class="flex items-center justify-between p-3 ${t.id===teamId?'bg-blue-100 border-2 border-blue-400':(i<3?'bg-yellow-50':'bg-gray-50')} rounded-xl"><div class="flex items-center gap-3"><span class="text-lg">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span><div><div class="font-bold text-gray-800 text-sm">${t.name}${t.id===teamId?' 👈':''}</div><div class="text-xs text-gray-500">${t.totalAnswered>0?Math.round((t.totalCorrect/t.totalAnswered)*100)+'% réussite':''}</div></div></div><span class="text-lg font-bold text-primary">${t.score} pts</span></div>`).join('');
     });
 }
+/* ════ REVUE DES RÉPONSES — STAGIAIRE ════ */
+let traineeReviewFilter='all';
+
+function formatAnswerValue(game,value){
+    if(value==null)return '<span class="text-gray-400 italic">— pas de réponse —</span>';
+    const opts=game.optionsWithIndex||(game.options?game.options.map((t,i)=>({text:t,originalIndex:i})):[]);
+    const findOpt=idx=>opts.find(o=>o.originalIndex===idx)?.text||`#${idx}`;
+    if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+        return findOpt(value);
+    }
+    if(game.type==='multiple-select'){
+        return Array.isArray(value)?value.map(findOpt).map(t=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${t}</span>`).join(''):String(value);
+    }
+    if(game.type==='sequence'||game.type==='ranking'){
+        const items=game.itemsWithIndex||(game.items?game.items.map((t,i)=>({text:t,originalIndex:i})):[]);
+        return Array.isArray(value)?value.map((idx,i)=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${i+1}. ${items.find(x=>x.originalIndex===idx)?.text||`#${idx}`}</span>`).join(''):String(value);
+    }
+    if(game.type==='fill-blank'){
+        return Array.isArray(value)?value.map(t=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">${t}</span>`).join(''):String(value);
+    }
+    if(game.type==='matching'){
+        return `<span class="text-xs italic">${(Array.isArray(value)?value.length:0)} paires faites</span>`;
+    }
+    if(game.type==='decision'){
+        return Array.isArray(value)?value.map((c,i)=>`<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">É${i+1}: opt ${c+1}</span>`).join(''):String(value);
+    }
+    if(game.type==='categories'){
+        return `<span class="text-xs italic">classement par catégories</span>`;
+    }
+    return JSON.stringify(value);
+}
+function formatCorrectAnswer(game){
+    if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+        return formatAnswerValue(game,game.correctAnswer);
+    }
+    if(game.type==='multiple-select')return formatAnswerValue(game,game.correctAnswers);
+    if(game.type==='sequence'||game.type==='ranking')return formatAnswerValue(game,game.correctOrder);
+    if(game.type==='fill-blank')return formatAnswerValue(game,game.correctBlanks);
+    if(game.type==='decision')return formatAnswerValue(game,game.correctPath);
+    if(game.type==='matching')return `<span class="text-xs italic">toutes les paires correctes</span>`;
+    if(game.type==='categories')return `<span class="text-xs italic">cf. correction projetée</span>`;
+    return '';
+}
+
+function renderTraineeReview(){
+    const el=document.getElementById('trainee-review-content');if(!el)return;
+    const data=traineeAnswerLog.filter(r=>{
+        if(traineeReviewFilter==='good')return r.isCorrect;
+        if(traineeReviewFilter==='bad')return !r.isCorrect;
+        return true;
+    });
+    if(!data.length){el.innerHTML='<div class="text-center text-gray-500 py-8">Aucune réponse à afficher.</div>';return;}
+    el.innerHTML=data.map((r,i)=>{
+        const g=r.game;
+        const ok=r.isCorrect;
+        const border=ok?'border-green-400 bg-green-50':'border-red-400 bg-red-50';
+        const head=ok?'<span class="text-green-700 font-bold">✅ Correcte</span>':'<span class="text-red-700 font-bold">❌ Incorrecte</span>';
+        return `<div class="border-2 ${border} rounded-xl p-3 text-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs px-2 py-0.5 rounded bg-white text-gray-600 font-bold">${getGameTypeLabel(g.type)}</span>
+                ${head}
+            </div>
+            <div class="font-bold text-gray-800 mb-2">${g.question}</div>
+            <div class="text-xs text-gray-600 mb-1"><strong>Votre réponse :</strong> ${formatAnswerValue(g,r.given)}</div>
+            ${ok?'':`<div class="text-xs text-gray-600 mb-1"><strong>Bonne réponse :</strong> ${formatCorrectAnswer(g)}</div>`}
+            ${g.explanation?`<div class="mt-2 text-xs text-blue-800 bg-blue-50 rounded p-2"><strong>💡 </strong>${g.explanation}</div>`:''}
+        </div>`;
+    }).join('');
+}
+window.openTraineeReview=function(){
+    traineeReviewFilter='all';
+    document.querySelectorAll('#trainee-review-modal [id^="review-tab-"]').forEach(b=>b.classList.replace('bg-blue-500','bg-gray-200')&&b.classList.replace('text-white','text-gray-700'));
+    const all=document.getElementById('review-tab-all');all.classList.replace('bg-gray-200','bg-blue-500');all.classList.replace('text-gray-700','text-white');
+    renderTraineeReview();
+    document.getElementById('trainee-review-modal').classList.remove('hidden');
+};
+window.closeTraineeReview=function(){document.getElementById('trainee-review-modal').classList.add('hidden');};
+
+window.openQrModal=function(){
+    if(!sessionId)return;
+    const modal=document.getElementById('qr-fullscreen-modal');
+    const c=document.getElementById('qr-fullscreen-container');
+    c.innerHTML='';
+    // Size the QR to fit the smallest viewport dimension, with a comfortable margin.
+    const size=Math.min(window.innerWidth,window.innerHeight)-180;
+    new QRCode(c,{text:window.location.href.split('?')[0]+'?session='+sessionId,width:size,height:size,colorDark:'#1e3a8a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    document.getElementById('qr-fullscreen-code').textContent='Code session : '+sessionId;
+    modal.classList.remove('hidden');
+};
+window.closeQrModal=function(){document.getElementById('qr-fullscreen-modal').classList.add('hidden');};
+
+// ESC closes the fullscreen QR
+document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&!document.getElementById('qr-fullscreen-modal').classList.contains('hidden'))closeQrModal();
+});
+window.filterTraineeReview=function(f){
+    traineeReviewFilter=f;
+    ['all','bad','good'].forEach(k=>{
+        const b=document.getElementById('review-tab-'+k);if(!b)return;
+        if(k===f){b.classList.replace('bg-gray-200','bg-blue-500');b.classList.replace('text-gray-700','text-white');}
+        else{b.classList.replace('bg-blue-500','bg-gray-200');b.classList.replace('text-white','text-gray-700');}
+    });
+    renderTraineeReview();
+};
+
 document.getElementById('back-dashboard-podium-btn').addEventListener('click',()=>showScreenSafe('supervisor-dashboard'));
 document.getElementById('restart-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
 document.getElementById('reset-game-btn').addEventListener('click',()=>{showConfirmDialog('Réinitialiser ?',()=>{database.ref('sessions/'+sessionId).remove();location.reload();});});
+document.getElementById('logout-btn').addEventListener('click',()=>{showConfirmDialog('Se déconnecter ?<br><small>La session active sera supprimée.</small>',()=>{
+    if(database&&sessionId){try{database.ref('sessions/'+sessionId).remove();}catch{}}
+    sessionId=null;userRole=null;teamId=null;teamName=null;
+    location.reload();
+});});
 
 /* ════ CONNEXION STAGIAIRE ════ */
 function saveSessionToLocalStorage(){if(sessionId&&teamId&&teamName)localStorage.setItem('ssiapTraineeSession',JSON.stringify({sessionId,teamId,teamName}));}
@@ -1262,6 +1704,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 function updateTraineeLevelBadge(level){const badge=document.getElementById('trainee-level-badge');if(badge)badge.textContent='🛡️ '+(LEVEL_SHORT[level]||LEVEL_SHORT[1]);}
 function reconnectToSession(sId,tId,teamData){
     userRole='trainee';teamName=teamData.name;teamId=tId;
+    if(teamData.avatar)selectedAvatar=teamData.avatar;
     document.body.classList.add('trainee-connected');
     database.ref('sessions/'+sId+'/teams/'+tId).update({online:true});
     database.ref('sessions/'+sId+'/teams/'+tId+'/online').onDisconnect().set(false);
@@ -1274,13 +1717,64 @@ function reconnectToSession(sId,tId,teamData){
         else if(session.status==='playing'){database.ref('sessions/'+sId+'/currentGame').once('value',s=>{const g=s.val();if(g)showTraineeGame(g);else showScreenSafe('trainee-waiting');});listenForGameUpdatesTrainee();}
     });
 }
-document.getElementById('join-game-btn').addEventListener('click',()=>{
+function renderAvatarPicker(){
+    const el=document.getElementById('avatar-picker');if(!el)return;
+    el.innerHTML=TRAINEE_AVATARS.map(a=>`<button type="button" class="avatar-btn ${a===selectedAvatar?'selected':''}" data-avatar="${a}">${a}</button>`).join('');
+    el.querySelectorAll('.avatar-btn').forEach(b=>b.addEventListener('click',()=>{
+        selectedAvatar=b.getAttribute('data-avatar');
+        // Picking an emoji clears any pending photo
+        clearAvatarPhoto();
+        el.querySelectorAll('.avatar-btn').forEach(x=>x.classList.toggle('selected',x===b));
+    }));
+    // Photo picker wiring
+    const fileInput=document.getElementById('avatar-photo-input');
+    const preview=document.getElementById('avatar-photo-preview');
+    const clearBtn=document.getElementById('avatar-photo-clear');
+    if(fileInput&&!fileInput._wired){
+        fileInput._wired=true;
+        fileInput.addEventListener('change',()=>{
+            const f=fileInput.files?.[0];if(!f)return;
+            pendingAvatarFile=f;
+            const url=URL.createObjectURL(f);
+            preview.innerHTML=`<img src="${url}" alt="aperçu">`;
+            preview.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+            // De-select all emoji buttons since the photo wins
+            document.querySelectorAll('#avatar-picker .avatar-btn.selected').forEach(b=>b.classList.remove('selected'));
+        });
+        clearBtn.addEventListener('click',clearAvatarPhoto);
+    }
+}
+function clearAvatarPhoto(){
+    pendingAvatarFile=null;
+    const fi=document.getElementById('avatar-photo-input');if(fi)fi.value='';
+    const pv=document.getElementById('avatar-photo-preview');if(pv){pv.innerHTML='';pv.classList.add('hidden');}
+    const cb=document.getElementById('avatar-photo-clear');if(cb)cb.classList.add('hidden');
+}
+// Initial render so the picker is visible from the get-go
+document.addEventListener('DOMContentLoaded',renderAvatarPicker);
+if(document.readyState!=='loading')renderAvatarPicker();
+
+document.getElementById('join-game-btn').addEventListener('click',async ()=>{
     teamName=document.getElementById('team-name-input').value.trim();
     if(!teamName){showCustomAlert('Entrez un nom d\'équipe !');return;}
     if(!sessionId){showCustomAlert('Session introuvable. Scannez à nouveau le QR code.');return;}
     teamId='team_'+generateUUID();
+    // If a photo was picked, upload it first; otherwise keep the emoji.
+    let avatar=selectedAvatar;
+    if(pendingAvatarFile&&window.supa){
+        const btn=document.getElementById('join-game-btn');
+        const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ Envoi de la photo…';
+        try{
+            avatar=await window.supa.admin.uploadTeamPhoto(pendingAvatarFile,teamId);
+        }catch(e){
+            console.error('[avatar] upload failed',e);
+            showCustomAlert('❌ Échec upload photo, on garde l\'emoji.');
+        }finally{btn.disabled=false;btn.textContent=old;}
+    }
+    selectedAvatar=avatar;
     const ref=database.ref('sessions/'+sessionId+'/teams/'+teamId);
-    ref.set({name:teamName,score:0,hasAnswered:false,answerTime:0,totalCorrect:0,totalAnswered:0,online:true,joinedAt:Date.now()}).then(()=>{
+    ref.set({name:teamName,avatar,score:0,hasAnswered:false,answerTime:0,totalCorrect:0,totalAnswered:0,online:true,joinedAt:Date.now()}).then(()=>{
         ref.child('online').onDisconnect().set(false);
         const url=new URL(window.location.href);url.searchParams.set('session',sessionId);url.searchParams.set('team',teamId);window.history.replaceState({},'',url.toString());
         saveSessionToLocalStorage();document.body.classList.add('trainee-connected');
@@ -1306,9 +1800,9 @@ function listenForGameUpdatesTrainee(){
 /* ════ JEU STAGIAIRE ════ */
 function showTraineeGame(game){
     lastTraineeGame=game;showScreenSafe('trainee-game');
-    document.getElementById('trainee-team-display').textContent=teamName;
+    document.getElementById('trainee-team-display').innerHTML=`<span class="inline-flex items-center gap-2">${renderAvatar(selectedAvatar||'🛡️','av-md')} ${teamName}</span>`;
     database.ref('sessions/'+sessionId+'/teams/'+teamId+'/score').on('value',s=>{document.getElementById('trainee-score-display').textContent=(s.val()||0)+' pts';});
-    document.getElementById('trainee-game-container').innerHTML=renderGameForTrainee(game);
+    document.getElementById('trainee-game-container').innerHTML=renderUploadedMedia(game,'trainee')+renderGameForTrainee(game);
     selectedAnswer=null;selectedSequence=[];selectedMultiple=[];selectedRanking=[];fillBlankAnswers=[];categoriesAnswers={};decisionPath=[];selectedCatItem=null;matchingLeft=null;matchingRight=null;
     const btn=document.getElementById('trainee-validate-btn');btn.disabled=false;btn.textContent='✓ Valider ma réponse';btn.classList.remove('opacity-50','cursor-not-allowed');btn.onclick=()=>validateTraineeAnswer(game);
 }
@@ -1370,7 +1864,12 @@ function validateTraineeAnswer(game){
     else if(game.type==='decision'){answer=decisionPath.map(p=>p.choice);isCorrect=JSON.stringify(answer)===JSON.stringify(game.correctPath);}
     database.ref('sessions/'+sessionId+'/teams/'+teamId).update({hasAnswered:true,answer,isCorrect,answerTime:elapsed})
         .then(()=>database.ref('sessions/'+sessionId+'/answersCount').transaction(c=>(c||0)+1))
-        .then(()=>{fireLog(isCorrect?'success':'warn','REPONSE',`"${teamName}" — ${isCorrect?'✅ Correcte':'❌ Incorrecte'} en ${elapsed}s [${game.type}]`,{isCorrect,elapsed,gameType:game.type,level:SELECTED_SSIAP_LEVEL});showScreenSafe('trainee-waiting-others');})
+        .then(()=>{
+            // Log this answer for the end-of-game review screen.
+            try{traineeAnswerLog.push({game:JSON.parse(JSON.stringify(game)),given:answer,isCorrect,time:elapsed});}catch{}
+            fireLog(isCorrect?'success':'warn','REPONSE',`"${teamName}" — ${isCorrect?'✅ Correcte':'❌ Incorrecte'} en ${elapsed}s [${game.type}]`,{isCorrect,elapsed,gameType:game.type,level:SELECTED_SSIAP_LEVEL});
+            showScreenSafe('trainee-waiting-others');
+        })
         .catch(err=>{fireLog('error','REPONSE',`Échec envoi "${teamName}" : ${err.message||err}`,{teamId,gameType:game.type});btn.disabled=false;btn.textContent='✓ Valider ma réponse';btn.classList.remove('opacity-50','cursor-not-allowed');showCustomAlert('Erreur. Réessayez.');});
 }
 
@@ -1393,7 +1892,7 @@ document.getElementById('close-admin-btn').addEventListener('click',()=>showScre
 document.getElementById('back-to-game-btn').addEventListener('click',()=>showScreenSafe('supervisor-dashboard'));
 document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{const tab=btn.id.replace('tab-','');document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));btn.classList.add('active');document.getElementById('content-'+tab).classList.remove('hidden');if(tab==='logs')refreshLogs();});});
 function switchAdminLevel(level){adminCurrentLevel=level;BOXES_DATA=BOXES_BY_LEVEL[level];[1,2,3].forEach(l=>{const btn=document.getElementById(`admin-level-btn-${l}`);if(btn)btn.style.outline=l===level?'3px solid white':'none';});renderBoxFilterButtons();renderAdminQuestions(0);}
-function renderBoxFilterButtons(){const colors=['bg-red-500','bg-blue-600','bg-cyan-500','bg-emerald-500'];document.getElementById('box-filter-btns').innerHTML=BOXES_DATA.map((box,i)=>`<button onclick="renderAdminQuestions(${i})" id="box-filter-${i}" class="px-4 py-2 ${colors[i]} text-white rounded-lg font-bold text-sm shadow transition-all hover:scale-105">${box.icon} ${box.title} <span class="opacity-75">(${box.games.length})</span></button>`).join('');}
+function renderBoxFilterButtons(){const colors=['bg-red-500','bg-blue-600','bg-cyan-500','bg-emerald-500','bg-purple-500','bg-amber-500','bg-slate-600'];document.getElementById('box-filter-btns').innerHTML=BOXES_DATA.map((box,i)=>`<button onclick="renderAdminQuestions(${i})" id="box-filter-${i}" class="px-4 py-2 ${colors[i%colors.length]} text-white rounded-lg font-bold text-sm shadow transition-all hover:scale-105">${box.icon} ${box.title} <span class="opacity-75">(${box.games.length})</span></button>`).join('');}
 function renderAdminQuestions(boxIdx){
     adminCurrentBox=boxIdx;BOXES_DATA.forEach((_,i)=>{const btn=document.getElementById('box-filter-'+i);if(btn)btn.style.outline=i===boxIdx?'3px solid white':'none';});
     const box=BOXES_DATA[boxIdx];const tC={'quiz':'bg-blue-100 text-blue-800','true-false':'bg-green-100 text-green-800','sequence':'bg-yellow-100 text-yellow-800','matching':'bg-purple-100 text-purple-800','find-intruder':'bg-pink-100 text-pink-800','multiple-select':'bg-indigo-100 text-indigo-800','scenario':'bg-orange-100 text-orange-800','ranking':'bg-teal-100 text-teal-800','fill-blank':'bg-rose-100 text-rose-800','categories':'bg-amber-100 text-amber-800','decision':'bg-sky-100 text-sky-800','image-identify':'bg-fuchsia-100 text-fuchsia-800'};
@@ -1409,20 +1908,155 @@ function renderAdminQuestions(boxIdx){
 }
 function renderQuestionPreview(g){let html=`<div class="text-sm text-gray-700 font-bold mb-3">${g.question}</div>`;if(g.scenario)html+=`<div class="bg-blue-50 p-3 rounded-lg mb-3 text-sm text-gray-600"><b>📋</b> ${g.scenario}</div>`;if(g.imageKey&&PICTOGRAMS[g.imageKey])html+=`<div style="width:50px;height:50px;border-radius:8px;overflow:hidden;margin-bottom:8px">${PICTOGRAMS[g.imageKey]}</div>`;if(g.options)html+=`<div class="space-y-1 mb-3">${g.options.map((o,i)=>`<div class="text-sm p-2 rounded-lg flex gap-2 ${(Array.isArray(g.correctAnswers)?g.correctAnswers.includes(i):g.correctAnswer===i)?'bg-green-50 text-green-800 font-bold':'bg-gray-50 text-gray-600'}"><span>${(Array.isArray(g.correctAnswers)?g.correctAnswers.includes(i):g.correctAnswer===i)?'✅':'○'}</span>${String.fromCharCode(65+i)}. ${o}</div>`).join('')}</div>`;if(g.items)html+=`<div class="space-y-1 mb-3">${g.items.map((item,i)=>`<div class="text-sm p-2 bg-yellow-50 text-yellow-800 rounded-lg">${i+1}. ${item}</div>`).join('')}</div>`;if(g.pairs)html+=`<div class="space-y-1 mb-3">${g.pairs.map(p=>`<div class="text-sm p-2 bg-purple-50 text-purple-800 rounded-lg">${p.left} → ${p.right}</div>`).join('')}</div>`;if(g.sentence)html+=`<div class="text-sm p-2 bg-rose-50 text-rose-800 rounded-lg mb-2 font-mono">${g.sentence}</div>`;if(g.explanation)html+=`<div class="text-sm p-3 bg-blue-50 text-blue-800 rounded-lg"><b>💡</b> ${g.explanation}</div>`;return html;}
 window.toggleEditor=function(bIdx,gIdx){document.getElementById(`qbody-${bIdx}-${gIdx}`)?.classList.toggle('open');};
-window.deleteQuestion=function(bIdx,gIdx){showConfirmDialog('Supprimer cette question ?',()=>{BOXES_DATA[bIdx].games.splice(gIdx,1);renderAdminQuestions(bIdx);showCustomAlert('✅ Supprimée !');});};
+window.deleteQuestion=function(bIdx,gIdx){
+    const game=BOXES_DATA[bIdx].games[gIdx];
+    showConfirmDialog('Supprimer cette question ?',async ()=>{
+        if(window.supa&&game?.id){
+            try{await window.supa.admin.deleteQuestion(game.id);}
+            catch(e){console.error('[admin] delete',e);showCustomAlert('❌ Échec suppression : '+(e.message||e));return;}
+        }
+        BOXES_DATA[bIdx].games.splice(gIdx,1);
+        renderAdminQuestions(bIdx);
+        showCustomAlert('✅ Question supprimée');
+    });
+};
 window.openEditModal=function(bIdx,gIdx){editingBox=bIdx;editingGame=gIdx;const game=BOXES_DATA[bIdx].games[gIdx];document.getElementById('modal-edit-content').innerHTML=buildEditForm(game);document.getElementById('question-edit-modal').classList.remove('hidden');};
 window.closeEditModal=function(){document.getElementById('question-edit-modal').classList.add('hidden');editingBox=-1;editingGame=-1;};
 function buildEditForm(game){
-    let html=`<div class="space-y-4"><div><label class="block text-sm font-bold text-gray-700 mb-1">Type</label><div class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-600">${getGameTypeLabel(game.type)}</div></div>`;
+    const pool=game.pool||'quiz';
+    let html=`<div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Type</label>
+          <div class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-600">${getGameTypeLabel(game.type)}</div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Banque</label>
+          <select id="edit-pool" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm font-bold">
+            <option value="quiz" ${pool==='quiz'?'selected':''}>❓ Quiz pur</option>
+            <option value="challenge" ${pool==='challenge'?'selected':''}>🎯 Challenge</option>
+          </select>
+        </div>
+      </div>`;
     if(game.scenario!==undefined)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">📋 Scénario</label><textarea id="edit-scenario" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.scenario||''}</textarea></div>`;
     html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">❓ Question</label><textarea id="edit-question" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="2">${game.question}</textarea></div>`;
     if(game.options){html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Options</label><div class="space-y-2">`;game.options.forEach((opt,i)=>{const isC=Array.isArray(game.correctAnswers)?game.correctAnswers.includes(i):game.correctAnswer===i;html+=`<div class="flex items-center gap-2"><input type="${Array.isArray(game.correctAnswers)?'checkbox':'radio'}" name="correct" value="${i}" ${isC?'checked':''} id="opt-check-${i}" class="w-4 h-4"><input type="text" id="opt-${i}" value="${opt}" class="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"><label for="opt-check-${i}" class="text-xs text-green-700 font-bold">✓</label></div>`;});html+=`</div></div>`;}
     if(game.items)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Items</label><div class="space-y-2">${game.items.map((item,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 ssiap-gradient text-white rounded-full flex items-center justify-center text-xs font-bold">${i+1}</span><input type="text" id="item-${i}" value="${item}" class="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div>`).join('')}</div></div>`;
     if(game.pairs)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-2">Paires</label><div class="space-y-2">${game.pairs.map((pair,i)=>`<div class="flex items-center gap-2"><input type="text" id="pair-left-${i}" value="${pair.left}" class="flex-1 px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"><span class="text-blue-500 font-bold">→</span><input type="text" id="pair-right-${i}" value="${pair.right}" class="flex-1 px-3 py-2 border-2 border-cyan-300 rounded-lg text-sm"></div>`).join('')}</div></div>`;
     if(game.sentence!==undefined)html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">Phrase (%1%, %2%…)</label><textarea id="edit-sentence" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="2">${game.sentence}</textarea></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Réponses (séparées par |)</label><input type="text" id="edit-blanks" value="${(game.correctBlanks||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div><div><label class="block text-sm font-bold text-gray-700 mb-1">Banque de mots (séparées par |)</label><input type="text" id="edit-wordbank" value="${(game.wordBank||[]).join('|')}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"></div>`;
-    html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">💡 Explication</label><textarea id="edit-explanation" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.explanation||''}</textarea></div></div>`;return html;
+    html+=`<div><label class="block text-sm font-bold text-gray-700 mb-1">💡 Explication</label><textarea id="edit-explanation" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" rows="3">${game.explanation||''}</textarea></div>`;
+    // ════ MÉDIAS (image / vidéo) ════
+    html+=buildMediaBlock('image',game.imageUrl);
+    html+=buildMediaBlock('video',game.videoUrl);
+    html+=`</div>`;return html;
 }
-window.saveQuestionEdit=function(){
+
+// Renders one media editor block (image or video).
+function buildMediaBlock(kind,currentUrl){
+    const isImg=kind==='image';
+    const icon=isImg?'🖼️':'🎬';
+    const title=isImg?'Image':'Vidéo';
+    const accept=isImg?'image/*':'video/*';
+    const preview=currentUrl
+        ? (isImg
+            ? `<img src="${currentUrl}" alt="aperçu" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-200 mx-auto">`
+            : `<video src="${currentUrl}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-200 mx-auto"></video>`)
+        : `<div class="text-gray-400 text-sm italic py-6">Aucun ${title.toLowerCase()}</div>`;
+    return `
+    <div class="media-block border-t-2 border-gray-200 pt-4 mt-2" data-kind="${kind}">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold text-gray-700">${icon} ${title}</span>
+        ${currentUrl?`<button type="button" onclick="mediaDelete('${kind}')" class="text-xs px-2 py-1 bg-red-500 text-white rounded font-bold">🗑️ Supprimer</button>`:''}
+      </div>
+      <input type="hidden" id="edit-${kind}-current" value="${currentUrl||''}">
+      <input type="hidden" id="edit-${kind}-action" value="keep">
+      <div id="edit-${kind}-preview" class="bg-gray-50 rounded-lg p-2 text-center mb-3">${preview}</div>
+      <div class="flex gap-1 mb-2 text-xs">
+        <button type="button" onclick="mediaTab('${kind}','upload')" id="tab-${kind}-upload" class="flex-1 px-3 py-2 bg-blue-500 text-white rounded-l-lg font-bold">💻 Depuis le PC</button>
+        <button type="button" onclick="mediaTab('${kind}','url')" id="tab-${kind}-url" class="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-r-lg font-bold">🌐 Lien web</button>
+      </div>
+      <div id="panel-${kind}-upload">
+        <input type="file" id="edit-${kind}-file" accept="${accept}" class="text-xs w-full" onchange="mediaFilePicked('${kind}')">
+        <p class="text-xs text-gray-500 mt-1">Le fichier sera uploadé sur Supabase à la sauvegarde.</p>
+      </div>
+      <div id="panel-${kind}-url" class="hidden">
+        <input type="url" id="edit-${kind}-url" placeholder="https://example.com/${kind==='image'?'photo.jpg':'video.mp4'}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm" oninput="mediaUrlChanged('${kind}')">
+        <p class="text-xs text-gray-500 mt-1">Lien direct vers ${kind==='image'?'l\'image':'la vidéo'} (sera chargé tel quel pendant le jeu).</p>
+      </div>
+    </div>`;
+}
+
+window.mediaTab=function(kind,mode){
+    document.getElementById(`panel-${kind}-upload`).classList.toggle('hidden',mode!=='upload');
+    document.getElementById(`panel-${kind}-url`).classList.toggle('hidden',mode!=='url');
+    const upBtn=document.getElementById(`tab-${kind}-upload`);
+    const urlBtn=document.getElementById(`tab-${kind}-url`);
+    if(mode==='upload'){upBtn.className='flex-1 px-3 py-2 bg-blue-500 text-white rounded-l-lg font-bold';urlBtn.className='flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-r-lg font-bold';}
+    else{upBtn.className='flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-l-lg font-bold';urlBtn.className='flex-1 px-3 py-2 bg-blue-500 text-white rounded-r-lg font-bold';}
+};
+window.mediaFilePicked=function(kind){
+    const f=document.getElementById(`edit-${kind}-file`)?.files?.[0];if(!f)return;
+    document.getElementById(`edit-${kind}-action`).value='upload';
+    // Live preview from local file
+    const url=URL.createObjectURL(f);
+    const tag=kind==='image'?`<img src="${url}" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto">`:`<video src="${url}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto"></video>`;
+    document.getElementById(`edit-${kind}-preview`).innerHTML=tag+'<div class="text-xs text-blue-600 font-bold mt-1">📤 sera uploadé à la sauvegarde</div>';
+    // Clear URL field
+    const urlEl=document.getElementById(`edit-${kind}-url`);if(urlEl)urlEl.value='';
+};
+window.mediaUrlChanged=function(kind){
+    const v=document.getElementById(`edit-${kind}-url`)?.value?.trim()||'';
+    document.getElementById(`edit-${kind}-action`).value=v?'url':'keep';
+    if(v&&/^https?:\/\//.test(v)){
+        const tag=kind==='image'?`<img src="${v}" class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto" onerror="this.outerHTML='<div class=\\'text-red-500 text-xs italic\\'>⚠️ URL invalide ou inaccessible</div>'">`:`<video src="${v}" controls class="max-h-40 max-w-full rounded-lg shadow-md border-2 border-blue-400 mx-auto"></video>`;
+        document.getElementById(`edit-${kind}-preview`).innerHTML=tag+'<div class="text-xs text-blue-600 font-bold mt-1">🌐 lien externe</div>';
+    }
+    // Clear file picker
+    const fEl=document.getElementById(`edit-${kind}-file`);if(fEl)fEl.value='';
+};
+window.mediaDelete=function(kind){
+    if(!confirm(`Supprimer ${kind==='image'?'l\'image':'la vidéo'} actuelle ?`))return;
+    document.getElementById(`edit-${kind}-action`).value='delete';
+    document.getElementById(`edit-${kind}-preview`).innerHTML=`<div class="text-red-500 text-sm italic py-6">🗑️ Sera supprimé à la sauvegarde</div>`;
+    const fEl=document.getElementById(`edit-${kind}-file`);if(fEl)fEl.value='';
+    const uEl=document.getElementById(`edit-${kind}-url`);if(uEl)uEl.value='';
+};
+// Map a legacy game object (camelCase, with sub-arrays) into the Supabase
+// payload shape (snake_case columns + sub-table arrays). Used by every
+// admin mutation below.
+function gameToDbPayload(game, moduleId, displayOrder) {
+    return {
+        id:              game.id,
+        module_id:       moduleId,
+        type:            game.type,
+        title:           game.title ?? null,
+        question:        game.question,
+        scenario:        game.scenario ?? null,
+        situation:       game.situation ?? null,
+        explanation:     game.explanation ?? null,
+        correct_answer:  game.correctAnswer ?? null,
+        correct_answers: game.correctAnswers ?? null,
+        correct_order:   game.correctOrder ?? null,
+        correct_blanks:  game.correctBlanks ?? null,
+        correct_path:    game.correctPath ?? null,
+        word_bank:       game.wordBank ?? null,
+        sentence:        game.sentence ?? null,
+        image_url:       game.imageUrl ?? null,
+        video_url:       game.videoUrl ?? null,
+        image_key:       game.imageKey ?? null,
+        image_desc:      game.imageDesc ?? null,
+        display_order:   displayOrder ?? 0,
+        pool:            game.pool ?? 'quiz',
+        options:         game.options,
+        items:           game.type === 'categories' ? null : game.items,
+        pairs:           game.pairs,
+        categories:      game.categories,
+        category_items:  game.type === 'categories' ? game.items : null,
+        decision_steps:  game.steps,
+    };
+}
+
+window.saveQuestionEdit=async function(){
     if(editingBox===-1)return;const game=BOXES_DATA[editingBox].games[editingGame];
     const qEl=document.getElementById('edit-question');if(qEl)game.question=qEl.value;
     const sEl=document.getElementById('edit-scenario');if(sEl)game.scenario=sEl.value;
@@ -1431,13 +2065,93 @@ window.saveQuestionEdit=function(){
     if(game.pairs)game.pairs.forEach((_,i)=>{const l=document.getElementById('pair-left-'+i),r=document.getElementById('pair-right-'+i);if(l)game.pairs[i].left=l.value;if(r)game.pairs[i].right=r.value;});
     if(game.sentence!==undefined){const sE=document.getElementById('edit-sentence'),bE=document.getElementById('edit-blanks'),wE=document.getElementById('edit-wordbank');if(sE)game.sentence=sE.value;if(bE)game.correctBlanks=bE.value.split('|').map(s=>s.trim());if(wE)game.wordBank=wE.value.split('|').map(s=>s.trim());}
     const expEl=document.getElementById('edit-explanation');if(expEl)game.explanation=expEl.value;
-    closeEditModal();renderAdminQuestions(editingBox);showCustomAlert('✅ Question modifiée !');
+    const poolEl=document.getElementById('edit-pool');if(poolEl)game.pool=poolEl.value;
+
+    // Apply media changes (upload / external URL / delete) for image and video.
+    for(const kind of ['image','video']){
+        const action=document.getElementById(`edit-${kind}-action`)?.value||'keep';
+        const field=kind==='image'?'imageUrl':'videoUrl';
+        if(action==='delete'){
+            game[field]=null;
+        }else if(action==='url'){
+            const u=document.getElementById(`edit-${kind}-url`)?.value?.trim();
+            if(u)game[field]=u;
+        }else if(action==='upload'){
+            const f=document.getElementById(`edit-${kind}-file`)?.files?.[0];
+            if(f&&window.supa){
+                try{
+                    const url=await window.supa.admin.uploadMedia(f,game.id,kind);
+                    game[field]=url;
+                }catch(e){console.error(`[admin] upload ${kind}`,e);showCustomAlert(`❌ Échec upload ${kind}`);}
+            }
+        }
+        // 'keep' → no change
+    }
+
+    // Persist to Supabase
+    if(window.supa&&game.id){
+        try{
+            const moduleId=BOXES_DATA[editingBox].id;
+            const idx=BOXES_DATA[editingBox].games.indexOf(game);
+            const payload=gameToDbPayload(game,moduleId,idx);
+            const {id,module_id,type,...patch}=payload;
+            await window.supa.admin.updateQuestion(game.id,patch);
+        }catch(e){
+            console.error('[admin] save question',e);
+            showCustomAlert('❌ Échec sauvegarde : '+(e.message||e));
+            return;
+        }
+    }
+    closeEditModal();renderAdminQuestions(editingBox);showCustomAlert('✅ Question sauvegardée');
 };
-window.addNewQuestion=function(boxIdx){const nQ={type:'quiz',question:'Nouvelle question ?',options:['Option A','Option B','Option C','Option D'],correctAnswer:0,explanation:'Explication à compléter.'};BOXES_DATA[boxIdx].games.push(nQ);renderAdminQuestions(boxIdx);setTimeout(()=>openEditModal(boxIdx,BOXES_DATA[boxIdx].games.length-1),100);};
+
+// All 12 supported question types with the empty skeleton each one needs.
+const QUESTION_TYPE_TEMPLATES={
+    'quiz':            {label:'❓ Quiz (1 bonne réponse)',          shape:()=>({type:'quiz',question:'Nouvelle question ?',options:['Option A','Option B','Option C','Option D'],correctAnswer:0,explanation:''})},
+    'true-false':      {label:'✓✗ Vrai / Faux',                      shape:()=>({type:'true-false',question:'Affirmation à valider.',options:['Vrai','Faux'],correctAnswer:0,explanation:''})},
+    'multiple-select': {label:'☑️ Multi-réponses (cocher tout ce qui convient)', shape:()=>({type:'multiple-select',question:'Quelles affirmations sont correctes ?',options:['Option A','Option B','Option C','Option D'],correctAnswers:[0,1],explanation:''})},
+    'find-intruder':   {label:'🔍 Trouver l\'intrus',                 shape:()=>({type:'find-intruder',question:'Lequel est l\'intrus ?',options:['Élément A','Élément B','Intrus','Élément D'],correctAnswer:2,explanation:''})},
+    'scenario':        {label:'📋 Scénario (mise en situation)',      shape:()=>({type:'scenario',scenario:'Décrivez la mise en situation ici.',question:'Que faites-vous ?',options:['Action A','Action B','Action C','Action D'],correctAnswer:0,explanation:''})},
+    'image-identify':  {label:'🖼️ Identifier une image / un panneau', shape:()=>({type:'image-identify',question:'Que représente cette image ?',options:['Réponse A','Réponse B','Réponse C','Réponse D'],correctAnswer:0,imageDesc:'',explanation:''})},
+    'sequence':        {label:'🔢 Séquence (remettre dans l\'ordre)',  shape:()=>({type:'sequence',question:'Remettez ces étapes dans l\'ordre.',items:['Étape 1','Étape 2','Étape 3','Étape 4'],correctOrder:[0,1,2,3],explanation:''})},
+    'ranking':         {label:'🏅 Classement (du plus au moins)',     shape:()=>({type:'ranking',question:'Classez ces éléments du plus important au moins important.',items:['Élément A','Élément B','Élément C','Élément D'],correctOrder:[0,1,2,3],explanation:''})},
+    'matching':        {label:'🔗 Association de paires',             shape:()=>({type:'matching',question:'Associez chaque élément à sa correspondance.',pairs:[{left:'Gauche A',right:'Droite A'},{left:'Gauche B',right:'Droite B'},{left:'Gauche C',right:'Droite C'}],explanation:''})},
+    'fill-blank':      {label:'📝 Texte à trous',                     shape:()=>({type:'fill-blank',question:'Complétez la phrase suivante.',sentence:'Le %1% est composé de %2% éléments.',correctBlanks:['feu','trois'],wordBank:['feu','trois','eau','quatre','air'],explanation:''})},
+    'categories':      {label:'🗂️ Catégorisation (tri par catégories)',shape:()=>({type:'categories',question:'Classez ces éléments dans la bonne catégorie.',categories:[{id:'ok',label:'✅ Acceptable'},{id:'nok',label:'❌ Refusé'}],items:[{text:'Élément 1',category:'ok'},{text:'Élément 2',category:'nok'},{text:'Élément 3',category:'ok'}],explanation:''})},
+    'decision':        {label:'🌳 Arbre de décision',                 shape:()=>({type:'decision',scenario:'Décrivez la situation initiale.',question:'Choisissez la meilleure suite d\'actions.',steps:[{question:'Étape 1 : que faites-vous ?',options:[{text:'Bonne réponse',nextStep:1},{text:'Mauvaise réponse',nextStep:99}]},{question:'Étape 2 : ensuite ?',options:[{text:'Bonne réponse',nextStep:null},{text:'Mauvaise réponse',nextStep:99}]}],correctPath:[0,0],explanation:''})},
+};
+
+window.addNewQuestion=function(boxIdx){
+    // Open a type-picker modal first.
+    const modal=document.getElementById('new-question-type-modal');
+    const grid=document.getElementById('new-question-type-grid');
+    grid.innerHTML=Object.entries(QUESTION_TYPE_TEMPLATES).map(([k,t])=>
+      `<button type="button" class="text-left bg-white hover:bg-blue-50 border-2 border-blue-200 hover:border-blue-500 rounded-xl p-3 font-bold text-sm transition-all" onclick="confirmNewQuestionType(${boxIdx},'${k}')">${t.label}</button>`
+    ).join('');
+    modal.classList.remove('hidden');
+};
+
+window.confirmNewQuestionType=async function(boxIdx,type){
+    document.getElementById('new-question-type-modal').classList.add('hidden');
+    const tpl=QUESTION_TYPE_TEMPLATES[type];if(!tpl){showCustomAlert('Type inconnu');return;}
+    const moduleId=BOXES_DATA[boxIdx].id;
+    const newId=`${moduleId}-q${Date.now()}`;
+    // Newly authored questions default to the 'challenge' pool (variety of
+    // 12 types). Trainer can switch to 'quiz' from the editor if needed.
+    const nQ={id:newId,...tpl.shape(),explanation:tpl.shape().explanation||'Explication à compléter.',pool:'challenge'};
+    if(window.supa){
+        try{
+            await window.supa.admin.createQuestion(gameToDbPayload(nQ,moduleId,BOXES_DATA[boxIdx].games.length));
+        }catch(e){console.error('[admin] create question',e);showCustomAlert('❌ Échec création : '+(e.message||e));return;}
+    }
+    BOXES_DATA[boxIdx].games.push(nQ);renderAdminQuestions(boxIdx);
+    setTimeout(()=>openEditModal(boxIdx,BOXES_DATA[boxIdx].games.length-1),100);
+};
+window.closeNewQuestionType=function(){document.getElementById('new-question-type-modal').classList.add('hidden');};
 
 /* ════ PARAMÈTRES ════ */
-function loadAdminSettings(){const saved=localStorage.getItem('ssiapAdminSettings');if(!saved)return;const s=JSON.parse(saved);QUESTION_TIME=s.questionTime||30;POINTS_PER_ANSWER=s.pointsPerAnswer||150;SPEED_BONUS_MAX=s.speedBonusMax||100;QUESTIONS_PER_BOX=s.questionsPerBox||8;const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};set('question-time',QUESTION_TIME);set('points-per-answer',POINTS_PER_ANSWER);set('speed-bonus',SPEED_BONUS_MAX);set('questions-per-box',QUESTIONS_PER_BOX);}
-document.getElementById('save-settings-btn').addEventListener('click',()=>{QUESTION_TIME=parseInt(document.getElementById('question-time').value);POINTS_PER_ANSWER=parseInt(document.getElementById('points-per-answer').value);SPEED_BONUS_MAX=parseInt(document.getElementById('speed-bonus').value);QUESTIONS_PER_BOX=parseInt(document.getElementById('questions-per-box').value);localStorage.setItem('ssiapAdminSettings',JSON.stringify({questionTime:QUESTION_TIME,pointsPerAnswer:POINTS_PER_ANSWER,speedBonusMax:SPEED_BONUS_MAX,questionsPerBox:QUESTIONS_PER_BOX}));showCustomAlert('✅ Paramètres sauvegardés !');});
+function loadAdminSettings(){const saved=localStorage.getItem('ssiapAdminSettings');if(!saved)return;const s=JSON.parse(saved);QUESTION_TIME=s.questionTime||30;POINTS_PER_ANSWER=s.pointsPerAnswer||150;SPEED_BONUS_MAX=s.speedBonusMax||100;const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};set('question-time',QUESTION_TIME);set('points-per-answer',POINTS_PER_ANSWER);set('speed-bonus',SPEED_BONUS_MAX);}
+document.getElementById('save-settings-btn').addEventListener('click',()=>{QUESTION_TIME=parseInt(document.getElementById('question-time').value);POINTS_PER_ANSWER=parseInt(document.getElementById('points-per-answer').value);SPEED_BONUS_MAX=parseInt(document.getElementById('speed-bonus').value);localStorage.setItem('ssiapAdminSettings',JSON.stringify({questionTime:QUESTION_TIME,pointsPerAnswer:POINTS_PER_ANSWER,speedBonusMax:SPEED_BONUS_MAX}));showCustomAlert('✅ Paramètres sauvegardés !');});
 </script>
 </body>
 </html>
